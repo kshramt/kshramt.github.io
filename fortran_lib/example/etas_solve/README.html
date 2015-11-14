@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+</head>
+<body>
+<p><code>catalog.tsv</code> contains synthetic catalog data generated with the following parameters</p>
+<ul>
+<li><code>t_pre = 0</code></li>
+<li><code>t_begin = 0</code></li>
+<li><code>t_end = 1000</code></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mstyle mathvariant="normal"><mi>r</mi></mstyle></msub><mo>=</mo><mn>6</mn></mrow><annotation encoding="application/x-tex">m_{\mathrm{r}} = 6</annotation></semantics></math></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mstyle mathvariant="normal"><mi>e</mi><mi>s</mi></mstyle></msub><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\mu_{\mathrm{es}} = 0.1</annotation></semantics></math></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mstyle mathvariant="normal"><mi>e</mi><mi>s</mi></mstyle></msub><mo>=</mo><mn>10</mn></mrow><annotation encoding="application/x-tex">K_{\mathrm{es}} = 10</annotation></semantics></math></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mn>0.01</mn></mrow><annotation encoding="application/x-tex">c = 0.01</annotation></semantics></math></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1.1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1.1</annotation></semantics></math></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>1.1</mn></mrow><annotation encoding="application/x-tex">p = 1.1</annotation></semantics></math></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">bin/etas_solve.sh</span> \
+   --t_normalize_len=1 \
+   --m_for_K=6 \
+   --t_pre=0 \
+   --t_begin=0 \
+   --t_end=1000 \
+   --data_file=example/etas_solve/catalog.tsv <span class="kw">|</span>
+   <span class="kw">release/bin/etas_solve.exe</span></code></pre></div>
+<p>will produce the following output:</p>
+<pre>
+output_format_version: 6
+<span style="color:#880088"># You can neglect lines start with LOG:</span>
+ LOG:   0.62500000000000022      F F F   953.84424736437643        0.0000000000000000        0.0000000000000000       -4.6051701859880909       0.50000000000000000        1.1000000000000001        757.73851366550036        27.167977875641725        17.799026602651235       -98.360704846540386       -248.04186291610631      F F F F F F F F F F
+ LOG:    1.2500000000000000      T F F   858.07586961536310      -0.11742399421555859        1.1884199376080833       -4.7034989019855766       0.85365804331918060        1.1403374451843273        656.59385034534205        26.859451413010902        14.846508187252244       -92.787032823458162       -214.37775978658328      F F F F F F F F F F
+ LOG:    2.5000000000000004      T F F   560.19808085168972      -0.76401898520084399        3.4997013172727813       -4.7853299099165953        1.5311949843992712        1.2957101624187857        262.82633110922927        35.265810788281271       -1.4310929093352449       -86.862245020708883       -58.418952353964045      F F F F F F F F F F
+ LOG:    1.4816658345308984      T T F   456.92764619042566       -1.3863095204545921        3.0981855137647503       -3.5173381210118841        1.3808002430393878        1.4239733275308766        77.221251849454376        3.5312111985917340        3.8606645161668496       -7.8783900411693253       -23.147896809263344      F F F F F F F F F F
+ LOG:   0.44210672570231707      T T F   439.41392881249493       -1.7853469636752888        2.9348242329336087       -3.5010553584333017        1.2883819595588391        1.3968753522256909        18.303358494174944       0.84823688003453412      -0.14814946970798459       -2.2500347101339457        4.1433610976305886      F F F F F F F F F F
+ LOG:   0.58649720762084068      T T F   437.12292648164322       -2.0624348461697939        2.9035852374552187       -3.9737241744625749        1.2749529444011771        1.1904068146984532        13.895747102454749        10.475292413001966        4.4941438710121595       -28.677724983295093       -45.846226225301450      F F F F F F F F F F
+ LOG:   0.14939996955671525      T T F   435.71837789401815       -2.1970012624957067        2.8723426622272608       -4.0279868148464297        1.2636847272115577        1.2032413436658109        1.0335597003319492       0.32993748874324069        1.2619703087114686E-002 -0.86006800203529110      -0.94125629608839745      F F F F F F F F F F
+ LOG:    3.3699002205168992E-002 T T F   435.70497273446995       -2.2271584929145773        2.8642005994872179       -4.0388446850869215        1.2604615514923547        1.1976209513709513        5.4929375722963414E-002   2.3250818567532860E-002   8.4503677697540525E-003  -6.3579520175494508E-002  -7.5153646755381942E-002 F F F F F F F F F F
+ LOG:    2.4385733550704386E-003 T T F   435.70493280996573       -2.2289272442228953        2.8638520132054568       -4.0404284313262933        1.2603413500282756        1.1972038831764555        2.0373084316815948E-004   9.7494554069044170E-005   4.4987242713290243E-005  -2.6772067906222219E-004  -3.5260796136071804E-004 F F F F F F F F F F
+ LOG:    9.2604946884451564E-006 T T F   435.70493280944117       -2.2289334938781864        2.8638508125300990       -4.0404349772371537        1.2603409506583143        1.1972023836752239        2.5935236180885113E-009   1.1787051334977150E-009   6.0495608522614930E-010  -3.2387106330133975E-009  -4.1650878301879857E-009 F F F F F F F F F F
+ LOG:    1.3272770104980491E-010 T T F   435.70493280944117       -2.2289334939625554        2.8638508125140074       -4.0404349773357868        1.2603409506531174        1.1972023836532220       -0.0000000000000000       -1.1368683772161603E-013   2.1316282072803006E-014  -0.0000000000000000       -5.6843418860808015E-014 F F F F F F F F F F
+iterations <span style="color:#880088"># total number of iterations</span>
+                   11
+iter_best <span style="color:#880088"># iteration with the best solution</span>
+                   10
+best log likelihood <span style="color:#880088"># log-likelihood of the best solution</span>
+  <span style="color:#880000">-435.70493280944117     </span>
+by_log: mu, K, c, alpha, p <span style="color:#880088"># the best solution with logarithmic transformation</span>
+  <span style="color:#0000ff;">-2.2289334938781864        2.8638508125300990       -4.0404349772371537        1.2603409506583143        1.1972023836752239     </span>
+by_log: gradient
+  -2.5935236180885113E-009  -1.1787051334977150E-009  -6.0495608522614930E-010   3.2387106330133975E-009   4.1650878301879857E-009
+by_log: Hessian
+  -61.354149734085098       -46.289021305781141       -14.775998592620260        130.48422937592949        186.66580577352323     
+  -46.289021305781141       -196.06780765812482       -14.999863873106516        524.87759185525647        210.58965267627275     
+  -14.775998592620260       -14.999863873106516       -18.751015597024509        41.630320134843075        114.36163278508727     
+   130.48422937592949        524.87759185525647        41.630320134843075       -1448.7654279544304       -581.45321748806509     
+   186.66580577352323        210.58965267627275        114.36163278508727       -581.45321748806509       -1055.8398937132104     
+mu, K, c, alpha, p, mu_for_SAPP, K_for_SAPP <span style="color:#880088"># the best solution</span>
+  <span style="color:#ff5500;">0.10764317103986623        17.528897636016854        1.7589819580216420E-002   1.2603409506583143        1.1972023836752239       0.10764317103986623        2.8291582203935763     </span>
+gradient
+  -2.4093765205179807E-008  -6.7242211798657081E-011  -3.4392087400192395E-008   3.2387106330133975E-009   4.1650878301879857E-009
+Hessian
+  -5295.0610986977281       -24.532223382870988       -7803.8510778574419        1212.1923584692981        1734.1165628090848     
+  -24.532223382870988      -0.63811225156236884       -48.648709916883980        29.943559643863956        12.013856036421338     
+  -7803.8510778574419       -48.648709916883980       -60604.102668505184        2366.7280920644253        6501.5807731030827     
+   1212.1923584692981        29.943559643863956        2366.7280920644253       -1448.7654279544304       -581.45321748806509     
+   1734.1165628090848        12.013856036421338        6501.5807731030827       -581.45321748806509       -1055.8398937132104     
+converge_by_gradient, converge_by_step_size, converge_at_corner, converge_by_iter_limit
+ T F F F <span style="color:#880088"># should be T F F F</span>
+fixed
+ F F F F F
+on_lower
+<span style="color:#880088"># should be F F F F F</span>
+<span style="color:#880088"># otherwise, some --lower= values may be too large</span>
+<span style="color:#880088"># or, data is not enough to constrain the parameters</span>
+ F F F F F
+on_upper
+<span style="color:#880088"># should be F F F F F</span>
+<span style="color:#880088"># otherwise, some --upper= values may be too small</span>
+<span style="color:#880088"># or, data is not enough to constrain the parameters</span>
+ F F F F F
+</pre>
+<ul>
+<li>Lines start with <code>LOG:</code> is useful only for debugging purpose.</li>
+<li>A line with <span style="color:#880000">dark red</span> contains log-likelihood of the best solution.</li>
+<li>A line with <span style="color:#0000ff;">blue</span> color contains the solution with logarithmic transformation:
+<ul>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><msub><mi>μ</mi><mstyle mathvariant="normal"><mi>e</mi><mi>s</mi></mstyle></msub></mrow><annotation encoding="application/x-tex">\log{\mu_{\mathrm{es}}}</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><msub><mi>K</mi><mstyle mathvariant="normal"><mi>e</mi><mi>s</mi></mstyle></msub></mrow><annotation encoding="application/x-tex">\log{K_{\mathrm{es}}}</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><mi>c</mi></mrow><annotation encoding="application/x-tex">\log{c}</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math> (by default)</li>
+</ul></li>
+<li>A line with <span style="color:#ff5500;">orange</span> color contains the solution:
+<ul>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mstyle mathvariant="normal"><mi>e</mi><mi>s</mi></mstyle></msub><annotation encoding="application/x-tex">\mu_{\mathrm{es}}</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mstyle mathvariant="normal"><mi>e</mi><mi>s</mi></mstyle></msub><annotation encoding="application/x-tex">K_{\mathrm{es}}</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math></li>
+</ul></li>
+<li>Printed gradient and Hessian are for the log-likelihood function (<em>not</em> for the negative log-likelihood function). Hence, all eigenvalues of the Hessian matrix are smaller than or equal to zero.</li>
+</ul>
+</body>
+</html>
