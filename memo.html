@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="hands">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Memorandum</title>
+  <style type="text/css">
+    pre, code, samp {
+      white-space: pre-wrap;
+    }
+
+    pre {
+      border-style: solid;
+      border-width: 1px;
+      border-radius: 1ex;
+      padding: 2ex;
+    }
+
+    body {
+      margin: auto;
+      padding: 1ex;
+      max-width: 102ex;
+      font-family: serif;
+    }
+    p{
+      line-height: 170%;
+    }
+    img, embed {
+      width: 100%;
+      max-width: 75ex;
+      height: auto;
+    }
+    h1, h2, h3, h4, h5 {
+      font-family: sans-serif;
+    }
+    h1:first-child {
+      border-top: 0;
+      margin-top: 1ex;
+      padding-top: 0;
+    }
+    h1 {
+      border-top: 1px solid gray;
+      margin-top: 2ex;
+      padding-top: 1ex;
+    }
+  </style>
+</head>
+<body>
+
+
+<article>
+<h1>Snippets</h1>
+
+<article>
+
+<h1>plot_input.sh</h1>
+
+Plot snapshots, total slip and map view.
+
+<pre>
+#!/bin/zsh
+
+# set -xv
+setopt no_unset
+setopt err_exit
+setopt pipe_fail
+setopt no_clobber
+
+
+export IFS=$' \t\n'
+export LANG=en_US.UTF-8
+umask u=rwx,g=,o=
+
+
+usage_and_exit(){
+   s="${1:-1}"
+   msg="
+${0##*/} <conf.json> <input.tsv> <output.pdf>
+"
+   if [[ $s -eq 0 ]]; then
+      echo "$msg"
+   else
+      echo "$msg" >&2
+   fi
+   exit "$s"
+}
+
+
+if [[ $# -ne 3 ]]; then
+   if [[ $# -ne 0 ]] && [[ $1 =~ '(-h|--help)' ]]; then
+      usage_and_exit 0
+   else
+      usage_and_exit
+   fi
+fi
+
+
+zmodload zsh/mathfunc
+
+
+readonly dir="${0%/*}"
+readonly tmp_dir="$(mktemp -d)"
+echo "$tmp_dir" > /dev/stderr
+
+
+readonly awk="${AWK:-awk}"
+readonly gmt="${GMT:-gmt}"
+readonly jq="${JQ:-jq}"
+
+readonly conf_json="$(readlink -f "$1")"
+readonly input_tsv="$(readlink -f "$2")"
+readonly output_pdf="$(readlink -f "$3")"
+
+readonly dt="$(jq .dt "$conf_json")"
+readonly dx="$(jq .dx "$conf_json")"
+readonly dy="$(jq .dy "$conf_json")"
+readonly nt="$(jq .nt "$conf_json")"
+readonly ix_src="$(jq .ix_src "$conf_json")"
+readonly nx="$(jq .nx "$conf_json")"
+readonly iy_src="$(jq .iy_src "$conf_json")"
+readonly ny="$(jq .ny "$conf_json")"
+readonly longitude_src="$(jq .longitude_src "$conf_json")"
+readonly latitude_src="$(jq .latitude_src "$conf_json")"
+readonly vr="$(jq .vr "$conf_json")"
+
+readonly panel_width=15
+readonly panel_height="$(((1.0*dy*ny)/(dx*nx)*panel_width))"
+readonly x_pad="$((0.2*panel_width))"
+readonly y_pad="$((0.2*panel_height))"
+readonly fig_width="$((panel_width + x_pad))"
+readonly fig_height="$(((nt + 1)*(panel_height + y_pad)))"
+
+readonly x1="$((-(ix_src - 0.5)*dx))"
+readonly x2="$(((nx - ix_src + 0.5)*dx))"
+readonly y1="$((-(iy_src - 0.5)*dy))"
+readonly y2="$(((ny - iy_src + 0.5)*dy))"
+
+readonly xscale="$((1.0*panel_width/(x2 - x1)))"
+readonly yscale="$((1.0*panel_height/(y2 - y1)))"
+
+
+readonly vector_max="$((panel_width/20.0))"
+
+
+cd "$tmp_dir"
+
+
+"$gmt" gmtset PS_MEDIA "$((2*fig_width))"cx"$((2*fig_height))"c
+"$gmt" gmtset PS_PAGE_ORIENTATION portrait
+"$gmt" gmtset MAP_ANNOT_OFFSET_PRIMARY "$((2*panel_width/60.0))"c
+"$gmt" gmtset MAP_TICK_LENGTH_PRIMARY -"$((panel_width/60.0))"c
+
+
+## functions
+
+maximum(){
+   "$awk" '
+BEGIN{
+   maxi = "-inf" + 0
+}
+
+$1 > maxi{maxi = $1}
+
+END{
+   print maxi
+}
+'
+}
+
+## make total
+
+for ((iy = 1; iy <= ny; iy++))
+do
+   for ((ix = 1; ix <= nx; ix++))
+   do
+      tail -n+2 "$input_tsv" |
+         grep ^true |
+         "$awk" -v OFS=$'\t' -v ix="$ix" -v iy="$iy" '
+BEGIN{
+   m1 = 0
+   m2 = 0
+   found = 0
+}
+$3 == ix && $4 == iy{
+   found = 1
+   x = $6
+   y = $7
+   dt = $14
+   dx = $15
+   dy = $16
+   rake1 = $19
+   density1 = $20
+   rake2 = $23
+   density2 = $24
+   m1 += dt*density1
+   m2 += dt*density2
+}
+END{
+   mx = cos(rake1)*m1 + cos(rake2)*m2
+   my = sin(rake1)*m1 + sin(rake2)*m2
+   rake = atan2(my, mx)
+   m = sqrt(mx**2 + my**2)
+
+   if(found){
+      print x, y, dx, dy, rake1, m1, rake2, m2, rake, m
+   }
+}
+'
+   done
+done > total.dat
+
+
+readonly m_max_total="$(
+   "$awk" '
+BEGIN{
+   maxi = 0
+}
+$10 > maxi{
+   maxi = $10
+}
+END{
+   print maxi
+}
+' total.dat
+)"
+
+
+## plot total
+
+
+"$gmt" makecpt -Chot -T0/"$m_max_total" -Z > total.cpt
+# "$gmt" makecpt -Crainbow -T0/"$m_max_total" -Z > total.cpt
+# "$gmt" makecpt -Cjet -T0/"$m_max_total" -Z > total.cpt
+# "$gmt" makecpt -Cocean -T0/"$m_max_total" -Z > total.cpt
+
+{
+   Y="$((nt*(panel_height + y_pad)))"
+   {
+      echo "$x1" "$y1"
+      echo "$x2" "$y1"
+      echo "$x2" "$y2"
+      echo "$x1" "$y2"
+   } |
+      "$gmt" psxy \
+             -R"$x1"/"$x2"/"$y1"/"$y2" \
+             -JX"$panel_width"c/"$panel_height"c \
+             -Ggray \
+             -L \
+             -K
+   cat total.dat |
+      awk \
+         -v xscale="$xscale" \
+         -v yscale="$yscale" \
+         '{print $1, $2, $10, xscale*$3, yscale*$4}' |
+      "$gmt" psxy \
+             -O \
+             -R \
+             -JX \
+             -BWeSn \
+             -Bxa+l"Strike (km)" \
+             -Bya+l"Up dip (km)" \
+             -Sr \
+             -Ctotal.cpt \
+             -K
+   # plot vectors
+   cat total.dat |
+      awk \
+         -v threshold="$((m_max_total/100.0))" \
+         -v scale="$((vector_max/m_max_total))" \
+         '
+BEGIN{
+   deg = 180/(2*atan2(1, 0))
+}
+$10 >= threshold{
+   print $1, $2, deg*$9, scale*$10
+}
+' |
+      "$gmt" psxy \
+             -O \
+             -R \
+             -JX \
+             -Sv0.2+ea \
+             -Gdarkblue \
+             -W1,lightblue \
+             -N \
+             -K
+   "$gmt" psscale \
+          -O \
+          -R \
+          -JX \
+          -Ctotal.cpt \
+          -Dn1.05/0+w"$panel_height"c/"$((0.05*panel_width))"c \
+          -Bxa+l"Slip (m)" \
+          -K
+} > snap.ps
+
+
+# plot snaps
+
+
+for ((it = 1; it <= nt; it++))
+do
+   tail -n+2 "$input_tsv" |
+   grep ^true |
+      "$awk" -v OFS=$'\t' -v it="$it" '
+$2 == it {
+   rake1 = $19
+   m1 = $20
+   rake2 = $23
+   m2 = $24
+   mx = cos(rake1)*m1 + cos(rake2)*m2
+   my = sin(rake1)*m1 + sin(rake2)*m2
+   rake = atan2(my, mx)
+   m = sqrt(mx**2 + my**2)
+   print $6, $7, $15, $16, rake1, m1, rake2, m2, mx, my, rake, m
+}' |
+      tee snap_"$it".dat
+done |
+   cut -f12 |
+   maximum > snap_m_max.dat
+
+readonly snap_m_max="$(cat snap_m_max.dat)"
+
+
+"$gmt" makecpt -Chot -T0/"$snap_m_max" -Z > snap.cpt
+
+{
+   for ((it = 1; it <= nt; it++))
+   do
+      Y="$((it*(panel_height + y_pad)))"
+      {
+         echo "$x1" "$y1"
+         echo "$x2" "$y1"
+         echo "$x2" "$y2"
+         echo "$x1" "$y2"
+      } |
+         "$gmt" psxy \
+                -O \
+                -Ya"$Y" \
+                -R \
+                -JX \
+                -Ggray \
+                -L \
+                -K
+      cat snap_"$it".dat |
+         "$awk" \
+            -v xscale="$xscale" \
+            -v yscale="$yscale" \
+            '{print $1, $2, $12, xscale*$3, yscale*$4}' |
+         "$gmt" psxy \
+                -O \
+                -Ya"$Y" \
+                -R \
+                -JX \
+                -BWesn \
+                -Bxa \
+                -Bya \
+                -Sr \
+                -Csnap.cpt \
+                -K
+      echo 0 0 |
+         "$gmt" psxy \
+                -O \
+                -Ya"$Y" \
+                -R \
+                -JX \
+                -Sc"$((2.0*panel_width/(x2 - x1)*vr*(it - 0.5)*dt))"c \
+                -W2,gray \
+                -K
+      # plot vectors
+      cat snap_"$it".dat |
+         "$awk" \
+            -v threshold="$((snap_m_max/100.0))" \
+            -v scale="$((vector_max/snap_m_max))"\
+            '
+BEGIN{
+   deg = 180/(2*atan2(1, 0))
+}
+$12 >= threshold{
+   print $1, $2, deg*$11, scale*$12
+}
+' |
+         "$gmt" psxy \
+                -O \
+                -Ya"$Y" \
+                -R \
+                -JX \
+                -Sv0.2+ea \
+                -Gdarkblue \
+                -W1,lightblue \
+                -N \
+                -K
+   done
+
+   "$gmt" psscale \
+          -O \
+          -Ya"$((1*(panel_height + y_pad)))" \
+          -R \
+          -JX \
+          -Csnap.cpt \
+          -Dn1.05/0+w"$panel_height"c/"$((0.05*panel_width))"c \
+          -Bxa+l"Slip rate (m/s)" \
+} >> snap.ps
+
+
+# plot the map projection of the total slip
+
+
+for ((iy = 1; iy <= ny; iy++))
+do
+   for ((ix = 1; ix <= nx; ix++))
+   do
+      tail -n+2 "$input_tsv" |
+         grep ^true |
+         "$awk" -v OFS=$'\t' -v ix="$ix" -v iy="$iy" '
+BEGIN{
+   m1 = 0
+   m2 = 0
+   found = 0
+}
+$3 == ix && $4 == iy{
+   found = 1
+   longitude = $11
+   latitude = $12
+   dt = $14
+   rake1 = $19
+   density1 = $20
+   rake2 = $23
+   density2 = $24
+   m1 += dt*density1
+   m2 += dt*density2
+}
+END{
+   mx = cos(rake1)*m1 + cos(rake2)*m2
+   my = sin(rake1)*m1 + sin(rake2)*m2
+   rake = atan2(my, mx)
+   m = sqrt(mx**2 + my**2)
+
+   if(found){
+      print longitude, latitude, rake1, m1, rake2, m2, rake, m
+   }
+}
+'
+   done
+done > map_total.dat
+
+
+max(){
+   local a="$1"
+   local b="$2"
+   if ((a > b)); then
+      echo "$a"
+   else
+      echo "$b"
+   fi
+}
+
+
+{
+   readonly xlarge="$(max "$((abs(x1)))" "$((abs(x2)))")"
+   readonly ylarge="$(max "$((abs(y1)))" "$((abs(y2)))")"
+   readonly dist_max="$((1.1*sqrt(xlarge**2 + ylarge**2)/100))"
+   "$gmt" pscoast \
+          -Rg \
+          -JE"$longitude_src"/"$latitude_src"/"$dist_max"/"$panel_width"c \
+          -P \
+          -Bafg \
+          -W1 \
+          -K
+   cat map_total.dat |
+      "$awk" \
+         '
+{
+   print $1, $2, $8
+}' |
+      "$gmt" psxy \
+             -O \
+             -R \
+             -JE \
+             -P \
+             -BWeSn \
+             -Sc0.1c \
+             -Ctotal.cpt \
+             -K
+   "$gmt" psscale \
+          -O \
+          -R0/1/0/1 \
+          -JX"$panel_width"c \
+          -P \
+          -Ctotal.cpt \
+          -Dn1.05/0+w"$panel_height"c/"$((0.05*panel_width))"c \
+          -Bxa+l"Slip (m)"
+} > map_snap.ps
+
+
+# export to PDF
+
+"$gmt" psconvert -A -Tf -Fsnap.pdf snap.ps
+"$gmt" psconvert -A -Tf -Fmap_snap.pdf map_snap.ps
+"${PDFUNITE:-pdfunite}" snap.pdf map_snap.pdf "$output_pdf"
+
+
+rm -fr "$tmp_dir"
+</pre>
+
+</article>
+</article>
+
+</body>
+</html>
