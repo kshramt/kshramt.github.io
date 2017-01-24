@@ -76,7 +76,7 @@ umask u=rwx,g=,o=
 usage_and_exit(){
    s="${1:-1}"
    msg="
-${0##*/} <conf.json> <input.tsv> <output.pdf>
+${0##*/} &lt;conf.json> &lt;input.tsv> &lt;output.pdf>
 "
    if [[ $s -eq 0 ]]; then
       echo "$msg"
@@ -170,9 +170,9 @@ END{
 
 ## make total
 
-for ((iy = 1; iy <= ny; iy++))
+for ((iy = 1; iy &lt;= ny; iy++))
 do
-   for ((ix = 1; ix <= nx; ix++))
+   for ((ix = 1; ix &lt;= nx; ix++))
    do
       tail -n+2 "$input_tsv" |
          grep ^true |
@@ -299,7 +299,7 @@ $10 >= threshold{
 # plot snaps
 
 
-for ((it = 1; it <= nt; it++))
+for ((it = 1; it &lt;= nt; it++))
 do
    tail -n+2 "$input_tsv" |
    grep ^true |
@@ -326,7 +326,7 @@ readonly snap_m_max="$(cat snap_m_max.dat)"
 "$gmt" makecpt -Chot -T0/"$snap_m_max" -Z > snap.cpt
 
 {
-   for ((it = 1; it <= nt; it++))
+   for ((it = 1; it &lt;= nt; it++))
    do
       Y="$((it*(panel_height + y_pad)))"
       {
@@ -407,9 +407,9 @@ $12 >= threshold{
 # plot the map projection of the total slip
 
 
-for ((iy = 1; iy <= ny; iy++))
+for ((iy = 1; iy &lt;= ny; iy++))
 do
-   for ((ix = 1; ix <= nx; ix++))
+   for ((ix = 1; ix &lt;= nx; ix++))
    do
       tail -n+2 "$input_tsv" |
          grep ^true |
@@ -566,7 +566,7 @@ umask u=rwx,g=,o=
 
 usage_and_exit(){
    {
-      echo "${0##*/}" '<out_dir>'
+      echo "${0##*/}" '&lt;out_dir>'
    } >&2
    exit "${1:-1}"
 }
