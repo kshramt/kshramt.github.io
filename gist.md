@@ -1,3 +1,28 @@
+# `reftex-uniquify-label`
+
+```el
+(with-eval-after-load 'reftex-ref
+  ;; copied from reftex-ref.el and modified to use time instead of serial number
+  (defun reftex-uniquify-label (label &optional force separator)
+    ;; Make label unique by appending a number.
+    ;; Optional FORCE means, force appending a number, even if label is unique.
+    ;; Optional SEPARATOR is a string to stick between label and number.
+
+    ;; Ensure access to scanning info
+    (reftex-access-scan-info)
+
+    (cond
+     ((and (not force)
+           (not (assoc label (symbol-value reftex-docstruct-symbol))))
+      label)
+     (t (let* ((ti (current-time))
+               (s (+ (cadr ti) (* 65536 (car ti)))))
+          (concat label
+                  (or separator "")
+                  (format "%x" (- s 1484800000)))))))
+  )
+```
+
 # `plot_likelihood_1d.py`
 
 ```py3
