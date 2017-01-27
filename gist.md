@@ -19,8 +19,29 @@
                (s (+ (cadr ti) (* 65536 (car ti)))))
           (concat label
                   (or separator "")
-                  (format "%x" (- s 1484800000)))))))
+                  (string-reverse (-base36hex (- s 1484800000)))
+                  ;; (string-reverse (format "%x" (- s 1484800000)))
+                  )))))
   )
+
+(defun -base36hex (n)
+  (if (< n 0) (error "n is negative"))
+  (let ((r (cl-rem n 36)))
+    (--base36hex (/ (- n r) 36)
+             (list (---base36hex r)))))
+
+(defun --base36hex (n s)
+  (if (<= n 0)
+      (apply 'concat s)
+    (let ((r (cl-rem n 36)))
+      (--base36hex (/ (- n r) 36)
+               (cons (---base36hex r) s)))))
+
+(defun ---base36hex (n)
+  (nth n '("0" "1" "2" "3" "4" "5" "6" "7" "8"
+           "9" "a" "b" "c" "d" "e" "f" "g" "h"
+           "i" "j" "k" "l" "m" "n" "o" "p" "q"
+           "r" "s" "t" "u" "v" "w" "x" "y" "z")))
 ```
 
 # `plot_likelihood_1d.py`
