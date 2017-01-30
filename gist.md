@@ -1,3 +1,91 @@
+# `plot_active_app.py`
+
+```py3
+#!/usr/bin/python
+
+import os
+import random
+import sys
+import datetime
+
+import matplotlib.pyplot as plt
+
+
+c_of_app = dict(
+    Emacs=(106/255, 90/255, 205/255),
+    firefox=(229/255, 91/255, 10/255),
+    Terminal=(0, 0, 0),
+)
+
+
+def main(argv):
+    fig, ax = plt.subplots()
+    ts = []
+    raw_vs = []
+    for t, v in _load(sys.stdin):
+        ts.append(t)
+        raw_vs.append(v)
+    vs = [os.path.basename(v) for v in raw_vs]
+    xs = [t.date() for t in ts]
+    ys = [t.time().hour + t.time().minute/60 + t.time().second/3600 for t in ts]
+    xyc_of_v = {}
+    random.seed(44)
+    for i, v in enumerate(vs):
+        if v in xyc_of_v:
+            xyc_of_v[v]["xs"].append(xs[i])
+            xyc_of_v[v]["ys"].append(ys[i])
+        else:
+            if v in c_of_app:
+                c = c_of_app[v]
+            else:
+                c = (random.random(), random.random(), random.random())
+            xyc_of_v[v] = dict(
+                xs=[xs[i]],
+                ys=[ys[i]],
+                c=c,
+            )
+    n_apps = len(xyc_of_v)
+    for i, (v, xyc) in enumerate(sorted(xyc_of_v.items(), key=lambda vxyc: len(vxyc[1]["xs"]), reverse=True)):
+        ax.scatter(
+            xyc["xs"],
+            xyc["ys"],
+            c=(xyc["c"],),
+            marker="_",
+            linewidth=0.015,
+            label=os.path.basename(v),
+        )
+        ax.text(
+            0.01,
+            (n_apps - 1 - i + 0.5)/n_apps,
+            v,
+            fontsize=100/n_apps,
+            color=xyc["c"],
+            horizontalalignment="left",
+            verticalalignment="center",
+            transform=ax.transAxes,
+        )
+
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Time of day (hour)")
+
+    fig.savefig(
+        sys.stdout.buffer,
+        format="pdf",
+        transparent=True,
+        bbox_inches="tight",
+    )
+
+
+def _load(fh):
+    for l in fh:
+        t, v = l.strip().split("\t", 1)
+        yield datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S"), v
+
+
+if __name__ == '__main__':
+    main(sys.argv)
+```
+
 # `reftex-uniquify-label`
 
 ```el
