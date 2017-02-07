@@ -1,3 +1,21 @@
+# `cde`
+
+```bash
+cde(){
+   local d="$("${MY_EMACSCLIENT:-emacsclient}" -e "
+(expand-file-name
+ (with-current-buffer
+     (window-buffer (get-mru-window))
+   default-directory))
+" | sed -e 's/^"\(.*\)"$/\1/g')"
+   if [[ -z "$d" ]]; then
+      :
+   else
+      pushd "$d"
+   fi
+}
+```
+
 # `plot_active_app.py`
 
 ```py3
