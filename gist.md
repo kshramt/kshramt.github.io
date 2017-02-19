@@ -1,46 +1,35 @@
-# `get_active_app.sh` on Linux
+# `get_active_app.sh`
 
 ```bash
 #!/bin/bash
 
-# set -xv
-set -o nounset
-set -o errexit
-set -o pipefail
-set -o noclobber
-
-export IFS=$' \t\n'
-export LANG=en_US.UTF-8
-umask u=rwx,g=,o=
-
-
-for _ in {1..12}
-do
-   h="$(hostname)"
-   t="$(date +'%FT%T')"
-   p="$(readlink -f /proc/"$(xdotool getwindowfocus getwindowpid)"/exe)"
-   echo "$h	$t	$p"
-   sleep 4.95
-done
-```
-
-# `get_active_app.sh` on macOS
-
-```bash
-#!/bin/bash
-
-for _ in {1..12}
-do
-   /usr/bin/python <<EOF
+readonly hn="$(hostname)"
+if [[ "$(uname -s)" = Darwin ]]; then
+   # there seems to be a bug in AppKit which makes loop inside Python useless
+   for _ in {1..12}
+   do
+      /usr/bin/python <<EOF
 import datetime
 from AppKit import NSWorkspace
 
-# bundleURL can be nil if the application does not have a bundle structure.
-print datetime.datetime.now().strftime("%FT%T") + "\t" + str(NSWorkspace.sharedWorkspace().menuBarOwningApplication().executableURL())
-EOF
+hn = "$hn"
 
-   sleep 4.99
-done
+# http://apple.stackexchange.com/questions/123730/is-there-a-way-to-detect-what-program-is-stealing-focus-on-my-mac
+# print datetime.datetime.now().strftime("%FT%T") + "\t" + str(NSWorkspace.sharedWorkspace().menuBarOwningApplication().bundleURL())
+# bundleURL can be nil if the application does not have a bundle structure.
+print hn + "\t" + datetime.datetime.now().strftime("%FT%T") + "\t" + str(NSWorkspace.sharedWorkspace().menuBarOwningApplication().executableURL())
+EOF
+      sleep 4.95
+   done
+else
+   for _ in {1..12}
+   do
+      t="$(date +'%FT%T')"
+      p="$(readlink -f /proc/"$(xdotool getwindowfocus getwindowpid)"/exe)"
+      echo "$hn	$t	$p"
+      sleep 4.95
+   done
+fi
 ```
 
 # `cde`
