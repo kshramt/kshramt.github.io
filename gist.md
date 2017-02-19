@@ -1,3 +1,153 @@
+# `mix.jl`
+
+```julia
+#!/usr/bin/env julia
+
+using Distributions
+
+
+const log2pi = log(2*pi)
+
+
+function main(args)
+    if length(args) != 1
+        _usage_and_exit()
+    end
+    srand(48)
+
+    xs, cs = load_data(args[1])
+
+    m_lo = -10.0
+    m_hi = 10.0
+    m_l = m_hi - m_lo
+    s2_lo = 0.0
+    s2_hi = 36.0
+    s2_l = s2_hi - s2_lo
+
+
+    n_comp = 3
+
+    ms = m_lo .+ (m_hi - m_lo).*rand(Float64, n_comp)
+    ms_new = similar(ms)
+    s2s = 0.1 .+ 2.*rand(Float64, n_comp)
+    s2s_new = similar(s2s)
+    n_xs = length(xs)
+    zs = rand(1:n_comp, n_xs)
+    zs_new = similar(zs)
+    lls = Vector{Float64}(n_xs)
+    lls_new = similar(lls)
+
+    loglik!(lls, xs, ms, s2s, zs, m_lo, m_l)
+    ll = sum(lls)
+
+    mstep = 0.1
+    s2step = 0.1
+
+    n_iter = 20000
+    output(STDOUT, 0, ll, ms, s2s, zs)
+    for i_iter in 1:n_iter
+        randn!(ms_new)
+        ms_new .*= mstep
+        ms_new .= cyclic.(ms_new .+ ms, m_lo, m_l)
+        randn!(s2s_new)
+        s2s_new .*= s2step
+        s2s_new .= cyclic.(s2s_new .+ s2s, s2_lo, s2_l)
+
+        loglik!(lls_new, xs, ms_new, s2s_new, zs, m_lo, m_l)
+        ll_new = sum(lls_new)
+
+        if exp(ll_new - ll) >= rand()
+            ms .= ms_new
+            s2s .= s2s_new
+            lls .= lls_new
+            ll = ll_new
+        end
+
+        for i in 1:n_xs
+            z_new = rand(1:n_comp)
+            ll_i = lls[i]
+            ll_i_new = loglik(xs[i], ms[z_new], s2s[z_new], m_lo, m_l)
+            if exp(ll_i_new - ll_i) >= rand()
+                zs[i] = z_new
+                lls[i] = ll_i_new
+            end
+        end
+        ll = sum(lls)
+        output(STDOUT, i_iter, ll, ms, s2s, zs)
+    end
+end
+
+
+function load_data(path)
+    xs = Vector{Float64}(0)
+    cs = Vector{Int}(0)
+
+    open(path) do io
+        for (i, l) in enumerate(eachline(io))
+            x, c = split(strip(l))
+            push!(xs, parse(eltype(xs), String(x)))
+            push!(cs, parse(eltype(cs), String(c)))
+        end
+    end
+    xs, cs
+end
+
+
+function output(io::IO, i, ll, ms, s2s, zs)
+    print(io, i, "\t", ll, "\t")
+    for m in ms
+        print(io, m, "\t")
+    end
+    for s2 in s2s
+        print(io, s2, "\t")
+    end
+    for i in 1:(length(zs) - 1)
+        print(io, zs[i], "\t")
+    end
+    println(io, zs[end])
+end
+
+
+function loglik!(lls, xs, ms, s2s, zs, m_lo, m_l)
+    @assert length(lls) == length(xs) == length(zs) > 0
+
+    for i in 1:length(lls)
+        x, z = xs[i], zs[i]
+        m = ms[z]
+        s2 = s2s[z]
+        lls[i] = loglik(x, m, s2, m_lo, m_l)
+    end
+    lls
+end
+
+function loglik(x, m, s2, m_lo, m_l)
+    lognormal(cyclic(x - m, m_lo, m_l), s2)
+end
+
+
+function cyclic(x, lo, l)
+    n = floor((x - lo)/l)
+    x - n*l
+end
+
+
+function lognormal(x, s2)
+    -((x^2)/s2 + log2pi + log(s2))/2
+end
+
+
+function _usage_and_exit(s=1)
+    io = s == 0 ? STDOUT : STDERR
+    println(io, "$PROGRAM_FILE <xc.tsv> > <out.tsv>")
+    exit(s)
+end
+
+
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
+    main(ARGS)
+end
+```
+
 # `get_active_app.sh`
 
 ```bash
