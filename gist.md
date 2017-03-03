@@ -1,3 +1,93 @@
+# `slide_template.tex`
+
+```tex
+% \PassOptionsToPackage{draft}{graphicx}
+\PassOptionsToPackage{dvipsnames}{xcolor}
+\documentclass{beamer}
+
+\usetheme[numbering=fraction]{metropolis}
+\usecolortheme{dove}
+\usefonttheme{professionalfonts}
+\setbeamercovered{transparent}
+% \setbeameroption{show notes}
+
+\usepackage{mathdots}
+\usepackage{mathtools}
+
+\usepackage{luatexja-fontspec}
+% \setsansfont{TeX Gyre Heros}
+% \setsansfont{DejaVu Sans}
+\setsansfont{Fira Sans}
+\setmainjfont{Noto Sans CJK JP}
+\usepackage{newtxsf}
+% http://www.feedbackward.com/content/nbs_latex.pdf
+\DeclareTextCommand{\nobreakspace}{T1}{\leavevmode\nobreak\ }
+
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{tikz}
+\usetikzlibrary{overlay-beamer-styles}
+\tikzset{invisible/.style={opacity=0.15}}
+
+\usepackage[absolute, overlay]{textpos}
+\setlength{\TPHorizModule}{0.01\paperwidth}
+\setlength{\TPVertModule}{0.01\paperheight}
+
+\usepackage{bm}
+\usepackage{microtype}
+
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclarePairedDelimiter{\pr}{(}{)}
+
+\title{Slide Template}
+\date{2017}
+\author{Me}
+\institute{Institute}
+
+\subject{}
+% This is only inserted into the PDF information catalog. Can be left
+% out.
+
+%\pgfdeclareimage[height=0.4cm]{logo}{img/logo.pdf}
+%\logo{\pgfuseimage{logo}}
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+\AtBeginSubsection[]
+{
+\begin{frame}<beamer>{Outline}
+\tableofcontents[currentsection,currentsubsection]
+\end{frame}
+}
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command:
+%\beamerdefaultoverlayspecification{<+->}
+
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+% \begin{frame}{Outline}
+% \tableofcontents
+% % You might wish to add the option [pausesections]
+% \end{frame}
+
+\begin{frame}
+  \frametitle{Introduction}
+  Hello $42$.
+\end{frame}
+
+\end{document}
+```
+
 # `mix.jl`
 
 ```julia
