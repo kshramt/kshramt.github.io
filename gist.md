@@ -1,3 +1,86 @@
+# `get_PP.py`
+
+```py
+#!/usr/bin/python
+
+import argparse
+import sys
+
+import numpy as np
+
+import obspy.taup
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description='Get P-PP time (s)')
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='%(prog)s {version}'.format(version=__version__),
+    )
+    parser.add_argument(
+        '--source_depth_in_km',
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        '--distance_in_degree_1',
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        '--distance_in_degree_2',
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        '--distance_n',
+        type=int,
+        required=True,
+    )
+    args = parser.parse_args(argv[1:])
+
+    assert args.distance_in_degree_1 <= args.distance_in_degree_2
+    assert args.distance_n > 0
+
+    tpm = obspy.taup.TauPyModel(model='ak135')
+
+    for d in np.linspace(args.distance_in_degree_1, args.distance_in_degree_2, args.distance_n):
+        arrivals = tpm.get_travel_times(
+            args.source_depth_in_km,
+            distance_in_degree=d,
+            phase_list=('P', 'PP'),
+        )
+        P_last = get_P_last(arrivals)
+        PP_first = get_PP_first(arrivals)
+        print(d, '\t', PP_first - P_last)
+
+
+def get_PP_first(arrivals):
+    ts = [ar.time for ar in arrivals if ar.name == 'PP']
+    ts.sort()
+    return ts[0]
+
+
+def get_P_last(arrivals):
+    ts = [ar.time for ar in arrivals if ar.name == 'P']
+    ts.sort()
+    return ts[-1]
+
+
+def _usage_and_exit(s=1):
+    if s == 0:
+        fh = sys.stdout
+    else:
+        fh = sys.stderr
+    print('{}'.format(__file__), file=fh)
+    exit(s)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
+```
+
 # `slide_template.tex`
 
 ```tex
