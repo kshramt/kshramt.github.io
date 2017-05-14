@@ -15,9 +15,7 @@ bm
 booktabs
 boondox
 breakurl
-bxcjkjatype
 caption
-cjk
 cjkpunct
 cleveref
 cmap
@@ -86,7 +84,6 @@ pgf
 pgfopts
 pgfplots
 placeins
-platex
 preprint
 present
 preview
