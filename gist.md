@@ -130,6 +130,47 @@ xparse
 xstring
 ```
 
+# `levenshtein_distance.py`
+
+```py
+#!/usr/bin/python
+
+import sys
+
+
+def main(argv):
+    assert levenshtein_distance("", "") == 0
+    assert levenshtein_distance("abc", "") == 3
+    assert levenshtein_distance("", "abc") == 3
+    assert levenshtein_distance("abc", "abc") == 0
+    assert levenshtein_distance("abc", "ac") == 1
+    assert levenshtein_distance("ac", "abc") == 1
+    assert levenshtein_distance("abc", "akc") == 1
+    assert levenshtein_distance("levenshtein distance", "lvnstn dstnc") == 8
+
+
+def levenshtein_distance(a, b):
+    a, b = list(a), list(b)
+    m, n = len(a), len(b)
+    row_prev = list(range(n + 1))
+    row_now = [None for _ in range(n + 1)]
+    for i in range(m):
+        row_now[0] = i + 1
+        ai = a[i]
+        for j in range(n):
+            row_now[j + 1] = min(
+                row_now[j] + 1,
+                row_prev[j + 1] + 1,
+                row_prev[j] + (0 if ai == b[j] else 1)
+            )
+        row_prev, row_now = row_now, row_prev
+    return row_prev[n]
+
+
+if __name__ == '__main__':
+    main(sys.argv)
+```
+
 # `get_PP.py`
 
 ```py
