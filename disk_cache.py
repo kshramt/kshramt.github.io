@@ -22,7 +22,6 @@ def disk_cache(
         import inspect
         import hashlib
         import pickle
-        import re
         import sys
 
         cwd = os.path.abspath(os.getcwd())
