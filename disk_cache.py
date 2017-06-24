@@ -53,7 +53,7 @@ def disk_cache(f):
             with open(path, "rb") as fp:
                 val = pickle.load(fp)
         except:
-            val = f(*args, *kwargs)
+            val = f(*args, **kwargs)
             with open(path, "wb") as fp:
                 pickle.dump(val, fp)
         return val
