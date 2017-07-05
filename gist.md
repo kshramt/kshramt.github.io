@@ -1,3 +1,20 @@
+# `with subplots(**kwargs) as (fig, axs):`
+
+```py
+class subplots:
+
+    def __init__(self, **kwargs):
+        import matplotlib.pyplot
+        self.fig, self.axs = matplotlib.pyplot.subplots(**kwargs)
+
+    def __enter__(self):
+        return self.fig, self.axs
+
+    def __exit__(self, typ, val, traceback):
+        import matplotlib.pyplot
+        matplotlib.pyplot.close(self.fig)
+```
+
 # `with rcparams("k", v)`
 
 ```py
