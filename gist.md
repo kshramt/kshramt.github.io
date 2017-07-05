@@ -1,3 +1,24 @@
+# `with rcparams("k", v)`
+
+```py
+class rcparams:
+    def __init__(self, *args):
+        assert len(args)%2 == 0
+        self.__params = {args[2*i + 0]: args[2*i + 1] for i in range(len(args)//2)}
+
+    def __enter__(self):
+        import matplotlib
+        self.__rcparams_orig = list(matplotlib.rcParams.items())
+        for k, v in self.__params.items():
+            matplotlib.rcParams[k] = v
+
+    def __exit__(self, typ, val, traceback):
+        import matplotlib
+        matplotlib.rcParams = matplotlib.RcParams()
+        for k, v in self.__rcparams_orig:
+            matplotlib.rcParams[k] = v
+```
+
 # `tlmgr` packages
 
 ```
