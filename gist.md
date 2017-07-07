@@ -1,3 +1,42 @@
+# `rasterized=True`
+
+```py
+#!/usr/bin/python
+
+import sys
+
+import scipy as sp
+import matplotlib.pyplot as plt
+
+
+def f(x, y):
+    r = x**2 + y**2
+    return sp.sin(r)/r
+
+
+def main(argv):
+    fig, (ax1, ax2) = plt.subplots(nrows=2, dpi=600)
+    xs = sp.linspace(-5, 5, 70)
+    ys = sp.linspace(-5, 5, 100)
+    X, Y = sp.meshgrid(xs, ys)
+    Z = f(X, Y)
+    handle = ax1.pcolormesh(X, Y, Z, cmap="viridis", rasterized=True)
+    handle = fig.colorbar(handle, aspect=30)
+    handle.set_label("Goodness")
+    ax1.set_xlabel(r"$X$")
+    ax1.set_ylabel(r"$Y$")
+
+    ax2.scatter(sp.randn(50), sp.randn(50), rasterized=True)
+    ax2.set_xlabel(r"$X$")
+    ax2.set_ylabel(r"$Y$")
+
+    fig.savefig(sys.stdout.buffer, format="pdf", transparent=True)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
+```
+
 # `with subplots(**kwargs) as (fig, axs):`
 
 ```py
