@@ -1,4 +1,4 @@
-# `plain.sh`
+# `txt_to_html.sh`
 
 ```sh
 #!/bin/bash
@@ -17,6 +17,8 @@
 
    usage_and_exit(){
       {
+         echo '# @i[/path/to/image]'
+         echo '# @l[/path/to/link]'
          echo "${0##*/}" '< <in.txt> > <out.html>'
       } >&2
       exit "${1:-1}"
@@ -28,7 +30,7 @@
 
    "${AWL:-gawk}" '
 BEGIN{
-   printf("%s", "<html><pre>");
+   printf("%s\n", "<html><pre>");
    is_at = 0;
    at_flag = "\0";
    is_link = 0;
@@ -44,8 +46,8 @@ BEGIN{
          if(c == "]"){
             is_link = 0;
             printf("%s", "\">");
-            n_path_buf = length(path_buf);
-            for(j = 1; j <= n_path_buf; j++){
+            n = length(path_buf);
+            for(j = 1; j <= n; j++){
                printf("%s", path_buf[j]);
             }
             printf("%s", "</a>");
@@ -57,9 +59,19 @@ BEGIN{
       }else if(is_image){
          if(c == "]"){
             is_image = 0;
+            n = length(path_buf);
+            if(n >= 4 && path_buf[n - 3] == "." && path_buf[n - 2] == "p" && path_buf[n - 1] == "d" && path_buf[n] == "f"){
+               printf("%s", "<object width=50% max-width=70ex max-height=70ex min-height=20ex data=\"");
+            }else{
+               printf("%s", "<img width=50% max-width=70ex max-height=70ex src=\"");
+            }
+            for(j = 1; j <= n; j++){
+               printf("%s", path_buf[j]);
+            }
             printf("%s", "\" />");
+            split("", path_buf);
          }else{
-            printf("%s", c);
+            path_buf[length(path_buf) + 1] = c;
          }
       }else if(at_flag == "l"){
          at_flag = "\0";
@@ -75,7 +87,6 @@ BEGIN{
          at_flag = "\0";
          if(c == "["){
             is_image = 1;
-            printf("%s", "<img width=50% max-width=70ex max-height=70ex src=\"");
          }else{
             printf("%s", "@");
             printf("%s", "i");
