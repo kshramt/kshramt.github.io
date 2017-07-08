@@ -269,44 +269,6 @@ if __name__ == '__main__':
     main(sys.argv)
 ```
 
-# `with subplots(**kwargs) as (fig, axs):`
-
-```py
-class subplots:
-
-    def __init__(self, **kwargs):
-        import matplotlib.pyplot
-        self.fig, self.axs = matplotlib.pyplot.subplots(**kwargs)
-
-    def __enter__(self):
-        return self.fig, self.axs
-
-    def __exit__(self, typ, val, traceback):
-        import matplotlib.pyplot
-        matplotlib.pyplot.close(self.fig)
-```
-
-# `with rcparams("k", v)`
-
-```py
-class rcparams:
-    def __init__(self, *args):
-        assert len(args)%2 == 0
-        self.params = {args[2*i + 0]: args[2*i + 1] for i in range(len(args)//2)}
-
-    def __enter__(self):
-        import matplotlib
-        self.rcparams_orig = list(matplotlib.rcParams.items())
-        for k, v in self.params.items():
-            matplotlib.rcParams[k] = v
-
-    def __exit__(self, typ, val, traceback):
-        import matplotlib
-        matplotlib.rcParams = matplotlib.RcParams()
-        for k, v in self.rcparams_orig:
-            matplotlib.rcParams[k] = v
-```
-
 # `tlmgr` packages
 
 ```
