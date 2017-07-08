@@ -1,3 +1,105 @@
+# `plain.jl`
+
+```jl
+#!/usr/bin/env julia
+
+
+doc"""
+@l[/path/to/link]
+@i[/path/to/image]
+"""
+function main(args)
+    write(STDOUT, "<html><pre>")
+    is_at = false
+    at_flag = '\0'
+    is_link = false
+    is_image = false
+    path_buf = Vector{Char}()
+    for line in eachline(STDIN, chomp=false)
+        for c in line
+            if is_link
+                if c == ']'
+                    is_link = false
+                    write(STDOUT, "'>")
+                    for x in path_buf
+                        write(STDOUT, x)
+                    end
+                    write(STDOUT, "</a>")
+                    empty!(path_buf)
+                else
+                    write(STDOUT, c)
+                    push!(path_buf, c)
+                end
+            elseif is_image
+                if c == ']'
+                    is_image = false
+                    write(STDOUT, "' />")
+                else
+                    write(STDOUT, c)
+                end
+            elseif at_flag == 'l'
+                at_flag = '\0'
+                if c == '['
+                    is_link = true
+                    write(STDOUT, "<a href='")
+                else
+                    write(STDOUT, '@')
+                    write(STDOUT, 'l')
+                    write(STDOUT, c)
+                end
+            elseif at_flag == 'i'
+                at_flag = '\0'
+                if c == '['
+                    is_image = true
+                    write(STDOUT, "<img width=50% max-width=70ex max-height=70ex src='")
+                else
+                    write(STDOUT, '@')
+                    write(STDOUT, 'i')
+                    write(STDOUT, c)
+                end
+            elseif is_at
+                is_at = false
+                if c == 'l' || c == 'i'
+                    at_flag = c
+                else
+                    write(STDOUT, '@')
+                    write(STDOUT, c)
+                end
+            elseif c == '&'
+                write(STDOUT, "&amp")
+            elseif c == '<'
+                write(STDOUT, "&lt")
+            elseif c == '>'
+                write(STDOUT, "&gt")
+            elseif c == '"'
+                write(STDOUT, "&quot")
+            elseif c == '\''
+                write(STDOUT, "&#39")
+            elseif c == '\t'
+                write(STDOUT, "&#9")
+            elseif c == '@'
+                is_at = true
+            else
+                write(STDOUT, c)
+            end
+        end
+    end
+    write(STDOUT, "</pre></html>")
+end
+
+
+function _usage_and_exit(s=1)
+    io = s == 0 ? STDOUT : STDERR
+    println(io, "$PROGRAM_FILE")
+    exit(s)
+end
+
+
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
+    main(ARGS)
+end
+```
+
 # `rasterized=True`
 
 ```py
