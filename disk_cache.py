@@ -14,7 +14,7 @@ def disk_cache(
         cache_dir = os.path.join(
             os.path.expanduser("~"),
             ".cache",
-            "file_cache.py.d",
+            "disk_cache.py.d",
         )
 
     def deco(f):
