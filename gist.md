@@ -166,6 +166,8 @@ comment
 ctablestack
 dejavu
 dot2tex
+dvipng
+dvisvgm
 ec
 enumitem
 eso-pic
