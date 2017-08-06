@@ -26,10 +26,9 @@ def disk_cache(
 
         cwd = os.path.abspath(os.getcwd())
         path_to_main = os.path.abspath(sys.argv[0])
-        path_to_call_site = os.path.abspath(inspect.stack()[1].filename)
         path_to_source = os.path.abspath(inspect.getsourcefile(f))
         code = inspect.getsource(f)
-        signature = "\n".join((cwd, path_to_main, path_to_call_site, path_to_source, code))
+        signature = "\n".join((cwd, path_to_main, path_to_source, code))
         f_dir = os.path.join(cache_dir, hashlib.sha256(bytes(signature, "utf-8")).hexdigest())
         os.makedirs(f_dir, exist_ok=True)
         with open(os.path.join(f_dir, "signature.txt"), "w") as fp:
