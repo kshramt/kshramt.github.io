@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+
+# This code may not work as expected since
+# >>> import pickle
+# >>> pickle.dumps(dict(a=1, b=2)) == pickle.dumps(dict(b=2, a=1))
+# False
 def disk_cache(
         cache_dir=None,
         open_data=open,
