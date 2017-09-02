@@ -142,7 +142,7 @@ if __name__ == '__main__':
 # `tlmgr` packages
 
 ```bash
-tlmgr list --only-installed | cut -f2 -d\  | sed -e 's/:$//g' | grep -v x86_64-darwin
+tlmgr list --only-installed | cut -f2 -d\  | sed -e 's/:$//g' | grep -v x86_64
 ```
 
 ```
