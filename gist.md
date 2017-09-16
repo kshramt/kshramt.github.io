@@ -1,3 +1,21 @@
+# `logging`
+
+```py
+def setup_logger():
+    import logging
+    import sys
+
+    logger = logging.getLogger(__name__)
+    hdl = logging.StreamHandler(sys.stderr)
+    hdl.setFormatter(logging.Formatter("%(levelname)s\t%(asctime)s\t%(filename)s\t%(funcName)s\t%(lineno)d\t%(message)s"))
+    logger.addHandler(hdl)
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+
+logger = setup_logger()
+```
+
 # `plain.jl`
 
 ```jl
