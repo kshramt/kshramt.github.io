@@ -1,3 +1,11 @@
+# AsciiDoctor
+
+```
+:stem: latexmath
+
+\(\alpha^{\beta_{\gamma}}\)
+```
+
 # `logging`
 
 ```py
