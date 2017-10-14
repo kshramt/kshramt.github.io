@@ -928,6 +928,13 @@ phony("all", ["daily", env[kof("all_figs.pdf", dict())], env[kof("all_figs.txt",
 
 if __name__ == "__main__":
     dsl.main(sys.argv)
+
+# AsciiDoctor
+
+```
+:stem: latexmath
+
+\(\alpha^{\beta_{\gamma}}\)
 ```
 
 # `logging`
