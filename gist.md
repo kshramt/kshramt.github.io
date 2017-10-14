@@ -1,3 +1,935 @@
+# `build.py`
+
+```py
+import collections
+import datetime
+import json
+import os
+import pprint
+from os.path import basename
+import shutil
+import subprocess
+import sys
+import tempfile
+
+import buildpy.v2
+
+os.environ["SHELL"] = "/bin/bash"
+os.environ["SHELLOPTS"] = "pipefail:errexit:nounset:noclobber"
+os.environ.setdefault("PYTHON", sys.executable)
+
+
+def info(*xs):
+    print("INFO\t" + datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + "\t" + "\t".join(map(str, xs)), file=sys.stderr)
+
+
+current_time = datetime.datetime.now()
+current_hash = subprocess.run(["git", "rev-parse", "HEAD"], check=True, stdout=subprocess.PIPE, universal_newlines=True).stdout.strip()
+info("CURRENT_TIME:", current_time)
+info("CURRENT_HASH:", current_hash)
+
+
+all_files = set(subprocess.run(["git", "ls-files", "-z"], check=True, universal_newlines=True, stdout=subprocess.PIPE).stdout.split("\0"))
+
+dsl = buildpy.v2.DSL(use_hash=True)
+let = dsl.let
+loop = dsl.loop
+file = dsl.file
+phony = dsl.phony
+sh = dsl.sh
+jp = dsl.jp
+
+dirname = dsl.dirname
+mkdir = dsl.mkdir
+mv = dsl.mv
+
+
+julia = os.environ.setdefault("JULIA", "julia")
+python = os.environ.setdefault("PYTHON", sys.executable)
+
+
+vx_b = "bin"
+vx_d = "data"
+vxw = jp(os.environ.get("WORK_DIR", ".."), "work")
+vxt = jp(os.environ.get("TMP_DIR", ".."), "tmp")
+daily = jp("..", "daily", current_time.strftime("%y%m%d"))
+mkdir(vxt)
+mkdir(daily)
+
+
+def set_daily(path, ekp, daily, env, job="daily"):
+    name = kof(path, ekp)
+    target = jp(daily, name) + os.path.splitext(path)[1]
+    @file([target], [env[name]])
+    def _(j):
+        assert len(j.ts) == len(j.ds)
+        for t, d in zip(j.ts, j.ds):
+            mkdir(dirname(t))
+            shutil.copy(d, t)
+    phony(job, [target])
+
+
+def filing(
+    targets_root_dir, # targets_root_dir/SH/A1_hash/target1
+    targets, # [(base_name, prop_dict), ...]
+    deps, # {name: path, ...} to ease access inside scripts
+    params, # {k: v, ...} specific to this job
+    env, # key -> path # human friendly alias
+    desc=None,
+    use_hash=None,
+):
+    assert all(isinstance(prop_dict, dict) for _, prop_dict in targets), targets
+    assert isinstance(deps, dict), deps
+    import functools
+    # `deps` should contain all necessary information except for job specific parameters
+    arg = _json_of(dict(params=params, deps=deps))
+    targets_root_dir = jp(targets_root_dir, _dir_of_str(arg))
+    targets = [(jp(targets_root_dir, base_name), kof(base_name, prop_dict))
+               for base_name, prop_dict in targets]
+    for path, env_key in targets:
+        set_uniq(env, env_key, path)
+    targets = [path for path, _ in targets]
+
+    # this is the actual decorator
+    def deco(f):
+        @functools.wraps(f)
+        @file(
+            targets,
+            list(flatten_deps(deps)),
+            desc=desc,
+            use_hash=use_hash,
+        )
+        def _f(j):
+            arg_path = jp(targets_root_dir, "__arg__.json")
+            # make arg.json if necessary
+            exist = True
+            prev = None
+            try:
+                with open(arg_path) as fp:
+                    prev = fp.read()
+            except:
+                exist = False
+            if (not exist) or (prev != arg):
+                mkdir(dirname(arg_path))
+                with open(arg_path, "w") as fp:
+                    fp.write(arg)
+            return f(j, arg_path)
+        return _f
+    return deco
+
+
+def make_run_with_temp(exe, tmp, env):
+    def run_with_temp(j, arg):
+        with tempfile.TemporaryDirectory(dir=tmp) as td:
+            temps = [jp(td, basename(t)) for t in j.ts]
+            sh(f"{exe} {j.ds[0]} {arg}", input="\0".join(temps), env={**os.environ, **env})
+            assert len(temps) == len(j.ts), (temps, j.ts)
+            for temp, target in zip(temps, j.ts):
+                mkdir(dirname(target))
+                mv(temp, target)
+    return run_with_temp
+
+
+# key_of
+def kof(name, params):
+    return _json_of([name, params])
+
+
+def flatten_deps(x):
+    if isinstance(x, dict):
+        for v in x.values():
+            yield from flatten_deps(v)
+    elif isinstance(x, list):
+        for v in x:
+            yield from flatten_deps(v)
+    else:
+        yield x
+
+
+def _dir_of_str(s):
+    import hashlib
+    h = hashlib.sha1(s.encode("utf-8")).hexdigest()
+    return jp(h[:2], h[2:])
+
+
+def _json_of(x):
+    import json
+    return json.dumps(x, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
+
+
+def copy_dict(d, ks):
+    if isinstance(d, dict):
+        return {k: d[k] for k in ks}
+    else:
+        return {k: getattr(d, k) for k in ks}
+
+
+def set_uniq(d, k, v):
+    if k in d:
+        raise ValueError(f"{k} in \n{pprint.pformat(d)}")
+    d[k] = v
+    return d
+
+
+def vcat(*ls):
+    import itertools
+    return list(itertools.chain(*ls))
+
+
+def write_list(path, l):
+    mkdir(dirname(path))
+    with open(path, "w") as fp:
+        for x in l:
+            print(x, file=fp)
+
+
+def error(msg):
+    raise Exception(msg)
+
+
+def _walk_leaves(d, tform, path):
+    for k, v in d.items():
+        assert not k.startswith("data"), d
+        assert not k.endswith("data"), d
+        assert "__" not in k, d
+        # todo: this O(len(path)**2)
+        p = path + [str(k)]
+        if isinstance(v, dict):
+            yield from _walk_leaves(v, tform, path=p)
+        else:
+            yield "__".join(p), tform(v)
+
+
+def _tuplize(x):
+    if isinstance(x, list):
+        return tuple(map(_tuplize, x))
+    else:
+        return x
+
+
+def get_conf():
+    dsl = buildpy.v2.DSL()
+    file = dsl.file
+    phony = dsl.phony
+    sh = dsl.sh
+
+    # conf_yaml = "conf.yaml"
+    # conf_json = "conf.json"
+    conf_yaml = "conf_small.yaml"
+    conf_json = "conf_small.json"
+
+    phony("all", [conf_json])
+
+    @file(conf_json, [jp(vx_b, "make_conf.jl"), conf_yaml])
+    def _j(j):
+        sh(f"{julia} {j.ds[0]} --out={j.ts[0]} --conf={j.ds[1]}")
+
+    dsl.main([sys.argv[0]])
+
+    # check if `conf.json` have been updated
+    assert os.path.getmtime(conf_json) >= os.path.getmtime(conf_yaml)
+    with open(conf_json) as fp:
+        return dict(_walk_leaves(json.load(fp), _tuplize, []))
+
+
+conf_dict = get_conf()
+Conf = collections.namedtuple("Conf", list(conf_dict.keys()))
+conf = Conf(**conf_dict)
+
+
+# I like side effects
+all_figs = []
+# for safety and convenience
+env = dict()
+
+
+@let
+def _():
+    @phony(f"check", [])
+    def _(j):
+        assert dict(_walk_leaves(dict(a=1, b=dict(c=2, d=dict(e=3))), lambda x: x, [])) == {"a": 1, "b__c": 2, "b__d__e": 3}
+        assert list(flatten_deps(dict(a=[1, 2], b=3, d=dict(e=[4, 5])))) == [1, 2, 3, 4, 5]
+
+
+@phony(f"touch", [], desc=f"Touch all version-controlled files to avoid unwanted rebuilds")
+def _(j):
+    for path in all_files:
+        # mtime = 0 seems to have some special meanings for some build systems
+        sh(f"touch --no-create -m --date=1970-01-02 00:00:00 {path}")
+
+
+# choose shallow layer data
+set_uniq(env, "shallow_layers_json", jp(vx_d, conf.cal__shallow_model + "_layers.json"))
+
+
+@filing(
+    vxw,
+    [("p_pp.json", dict())],
+    dict(exe=jp(vx_b, "get_P_PP.py")),
+    dict(
+        source_depth_in_km=0,
+        distance_in_degree_1=25,
+        distance_in_degree_2=95,
+        distance_n=71,
+    ),
+    env,
+)
+def _(j, arg):
+    sh(f"{python} {j.ds[0]} {arg}", input="\0".join(j.ts))
+
+
+@filing(
+    vxw,
+    [("recs.jld2", dict())],
+    dict(exe=jp(vx_b, "make_recs.jl"), data=env[kof("p_pp.json", dict())]),
+    copy_dict(
+        conf,
+        [
+            "rec__dt",
+            "rec__n",
+            "rec__nt",
+            "src__latitude_hypo",
+            "src__longitude_hypo",
+            "rec__seed",
+        ],
+    ),
+    env,
+)
+def _(j, arg):
+    sh(f"{julia} {j.ds[0]} {arg}", input="\0".join(j.ts))
+
+
+@filing(
+    vxw,
+    [("recs.pdf", dict())],
+    dict(exe=jp(vx_b, "plot_recs.jl"), data=env[kof("recs.jld2", dict())]),
+    copy_dict(
+        conf,
+        [
+            "src__latitude_hypo",
+            "src__longitude_hypo",
+        ],
+    ),
+    env,
+)
+def _(j, arg):
+    sh(f"{julia} {j.ds[0]} {arg}", input="\0".join(j.ts))
+all_figs.append(env[kof("recs.pdf", dict())])
+set_daily("recs.pdf", dict(), daily, env)
+
+
+@loop(conf.cal__layers_seed_list)
+def _(layers_src_seed):
+    params = copy_dict(
+        conf,
+        [
+            "cal__sigma_density",
+            "cal__sigma_density_max",
+            "cal__sigma_vp",
+            "cal__sigma_vp_max",
+            "cal__sigma_vs",
+            "cal__sigma_vs_max",
+            "cal__sigma_depth",
+            "cal__sigma_depth_max",
+        ],
+    )
+    set_uniq(params, "layers_src_seed", layers_src_seed)
+    filing(
+        vxw,
+        [("layers_src.jld2", dict(layers_src_seed=layers_src_seed))],
+        dict(exe=jp(vx_b, "make_layers_src.jl"), data=env["shallow_layers_json"]),
+        params,
+        env,
+    )(make_run_with_temp(julia, vxt, {"OPENBLAS_NUM_THREADS": "1"}))
+
+
+filing(
+    vxw,
+    [("layers_src.jld2", dict(layers_src_seed="cal"))],
+    dict(
+        exe=jp(vx_b, "make_cal_layers_src.jl"),
+        layers_src_list=[env[kof("layers_src.jld2", dict(layers_src_seed=layers_src_seed))]
+                         for layers_src_seed in conf.cal__layers_seed_list],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("layers_src.jld2", dict(layers_src_seed="ref"))],
+    dict(exe=jp(vx_b, "make_ref_layers_src.jl"), data=env["shallow_layers_json"]),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("layers_src.jld2", dict(layers_src_seed="true"))],
+    dict(exe=jp(vx_b, "make_true_layers_src.jl"), data=env["shallow_layers_json"]),
+    copy_dict(
+        conf,
+        [
+            "cal__true_layers_seed",
+            "cal__sigma_density",
+            "cal__sigma_density_max",
+            "cal__sigma_vp",
+            "cal__sigma_vp_max",
+            "cal__sigma_vs",
+            "cal__sigma_vs_max",
+            "cal__sigma_depth",
+            "cal__sigma_depth_max",
+            "syn__true_ratio",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("layers_src_list.pdf", dict())],
+    dict(
+        exe=jp(vx_b, "plot_layers_src_list.jl"),
+        true_layers_src=env[kof("layers_src.jld2", dict(layers_src_seed="true"))],
+        cal_layers_src=env[kof("layers_src.jld2", dict(layers_src_seed="cal"))],
+        layers_src_list=[env[kof("layers_src.jld2", dict(layers_src_seed=layers_src_seed))]
+                         for layers_src_seed in conf.cal__layers_seed_list],
+    ),
+    copy_dict(
+        conf,
+        [
+            "cal__base_model",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+all_figs.append(env[kof("layers_src_list.pdf", dict())])
+set_daily("layers_src_list.pdf", dict(), daily, env)
+
+
+filing(
+    vxw,
+    [("src_params.jld2", dict())],
+    dict(exe=jp(vx_b, "make_src_params.jl")),
+    copy_dict(
+        conf,
+        [
+            "src__longitude_hypo",
+            "src__latitude_hypo",
+            "src__depth",
+            "src__strike",
+            "src__dip",
+            "src__rake",
+            "src__vr",
+            "src__dt",
+            "src__nt_local",
+            "src__nt_total",
+            "src__nt_sub",
+            "src__dx",
+            "src__ix_hypo",
+            "src__nx",
+            "src__nx_sub",
+            "src__dy",
+            "src__iy_hypo",
+            "src__ny",
+            "src__ny_sub",
+            "src__is_free_surface",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("true_m.jld2", dict())],
+    dict(exe=jp(vx_b, "make_true_m.jl"), data=env[kof("src_params.jld2", dict())]),
+    copy_dict(
+        conf,
+        [
+            "syn__amp_list",
+            "syn__it_local_list",
+            "syn__ix_list",
+            "syn__iy_list",
+            "syn__sigma_t_list",
+            "syn__sigma_x_list",
+            "syn__sigma_y_list",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("true_m.pdf", dict())],
+    dict(
+        exe=jp(vx_b, "plot_m.jl"),
+        src_params=env[kof("src_params.jld2", dict())],
+        m=env[kof("true_m.jld2", dict())],
+    ),
+    copy_dict(
+        conf,
+        [
+            "src__nt_total",
+            "src__dt",
+            "src__ix_hypo",
+            "src__iy_hypo",
+            "src__nx",
+            "src__ny",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+all_figs.append(env[kof("true_m.pdf", dict())])
+set_daily("true_m.pdf", dict(), daily, env)
+
+
+@loop(vcat(["true", "ref"], conf.cal__layers_seed_list))
+def _(layers_src_seed):
+    filing(
+        vxw,
+        [("propagator_params.jld2", dict(layers_src_seed=layers_src_seed))],
+        dict(
+            exe=jp(vx_b, "make_propagator_params.jl"),
+            recs=env[kof("recs.jld2", dict())],
+            src_params=env[kof("src_params.jld2", dict())],
+            layers_src=env[kof("layers_src.jld2", dict(layers_src_seed=layers_src_seed))],
+        ),
+        copy_dict(
+            conf,
+            [
+                "cal__nt_green",
+                "cal__dt_green",
+                "cal__base_model",
+                "src__longitude_hypo",
+                "src__latitude_hypo",
+                "src__depth",
+            ],
+        ),
+        env,
+    )(make_run_with_temp(julia, vxt, {"OPENBLAS_NUM_THREADS": "1"}))
+
+
+filing(
+    vxw,
+    [("true_d.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_true_d.jl"),
+        propagator_params=env[kof("propagator_params.jld2", dict(layers_src_seed="true"))],
+        true_m=env[kof("true_m.jld2", dict())],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("data.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_data.jl"),
+        recs=env[kof("recs.jld2", dict())],
+        true_d=env[kof("true_d.jld2", dict())],
+    ),
+    copy_dict(
+        conf,
+        [
+            "syn__obs_noise_seed",
+            "syn__sigma_bg_ratio",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("Cb.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_Cb.jl"),
+        data=env[kof("data.jld2", dict())],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("Ks.jld2", dict())],
+    dict(exe=jp(vx_b, "make_Ks.jl"), data=env[kof("src_params.jld2", dict())]),
+    copy_dict(
+        conf,
+        [
+            "analysis__search_space_time",
+            "src__is_free_surface",
+            "src__ny",
+            "src__vr",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("d.jld2", dict())],
+    dict(exe=jp(vx_b, "make_d.jl"), data=env[kof("data.jld2", dict())]),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("d.pdf", dict())],
+    dict(exe=jp(vx_b, "plot_d.jl"), data=env[kof("d.jld2", dict())]),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+all_figs.append(env[kof("d.pdf", dict())])
+set_daily("d.pdf", dict(), daily, env)
+
+
+@loop(vcat(["true", "ref"], conf.cal__layers_seed_list))
+def _(layers_src_seed):
+    filing(
+        vxw,
+        [("inv.jld2", dict(layers_src_seed=layers_src_seed))],
+        dict(
+            exe=jp(vx_b, "make_inv.jl"),
+            d=env[kof("d.jld2", dict())],
+            Ks=env[kof("Ks.jld2", dict())],
+            Cb=env[kof("Cb.jld2", dict())],
+            propagator_params=env[kof("propagator_params.jld2", dict(layers_src_seed=layers_src_seed))],
+        ),
+        dict(),
+        env,
+    )(make_run_with_temp(julia, vxt, {"OPENBLAS_NUM_THREADS": "1"}))
+
+    filing(
+        vxw,
+        [("inv.json", dict(layers_src_seed=layers_src_seed))],
+        dict(
+            exe=jp(vx_b, "summarize_inv.jl"),
+            data=env[kof("inv.jld2", dict(layers_src_seed=layers_src_seed))],
+        ),
+        dict(),
+        env,
+    )(make_run_with_temp(julia, vxt, {"OPENBLAS_NUM_THREADS": "1"}))
+
+
+@loop(
+    (
+        ("plot_weights.py", "weights.pdf"),
+        ("plot_hypers.py", "hypers.pdf"),
+        ("plot_lml_logdethess.py", "lml_logdethess.pdf"),
+        ("plot_heights.py", "lml_heights.pdf"),
+    ),
+    tform=lambda x: x,
+)
+def _(exe_name, target):
+    filing(
+        vxw,
+        [(target, dict())],
+        dict(
+            exe=jp(vx_b, exe_name),
+            data_list=[env[kof("inv.json", dict(layers_src_seed=layers_src_seed))] for layers_src_seed in conf.cal__layers_seed_list],
+        ),
+        dict(),
+        env,
+    )(make_run_with_temp(python, vxt, dict()))
+    all_figs.append(env[kof(target, dict())])
+    set_daily(target, dict(), daily, env)
+
+
+filing(
+    vxw,
+    [("marginal_likelihood.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_marginal_likelihood.jl"),
+        d=env[kof("d.jld2", dict())],
+        Ks=env[kof("Ks.jld2", dict())],
+        Cb=env[kof("Cb.jld2", dict())],
+        propagator_params=env[kof("propagator_params.jld2", dict(layers_src_seed="ref"))],
+        inv=env[kof("inv.json", dict(layers_src_seed="ref"))],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("marginal_likelihood.pdf", dict())],
+    dict(
+        exe=jp(vx_b, "plot_marginal_likelihood.jl"),
+        data=env[kof("marginal_likelihood.jld2", dict())],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+all_figs.append(env[kof("marginal_likelihood.pdf", dict())])
+set_daily("marginal_likelihood.pdf", dict(), daily, env)
+
+
+filing(
+    vxw,
+    [("posterior_mean_cov.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_posterior_mean_cov.jl"),
+        inv_json_list=[env[kof("inv.json", dict(layers_src_seed=layers_src_seed))] for layers_src_seed in conf.cal__layers_seed_list],
+        inv_jld2_list=[env[kof("inv.jld2", dict(layers_src_seed=layers_src_seed))] for layers_src_seed in conf.cal__layers_seed_list],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("posterior_mean.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_posterior_mean.jl"),
+        data=env[kof("posterior_mean_cov.jld2", dict())],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+filing(
+    vxw,
+    [("m_list.pdf", dict())],
+    dict(
+        exe=jp(vx_b, "plot_m_list.jl"),
+        src_params=env[kof("src_params.jld2", dict())],
+        inv_json_list=[env[kof("inv.json", dict(layers_src_seed=layers_src_seed))] for layers_src_seed in conf.cal__layers_seed_list],
+    ),
+    copy_dict(
+        conf,
+        [
+            "src__nt_total",
+            "src__dt",
+            "src__ix_hypo",
+            "src__iy_hypo",
+            "src__nx",
+            "src__ny",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+all_figs.append(env[kof("m_list.pdf", dict())])
+set_daily("m_list.pdf", dict(), daily, env)
+
+
+filing(
+    vxw,
+    [("mean_of_posterior_mean.jld2", dict())],
+    dict(
+        exe=jp(vx_b, "make_mean_of_posterior_mean.jl"),
+        inv_json_list=[env[kof("inv.json", dict(layers_src_seed=layers_src_seed))] for layers_src_seed in conf.cal__layers_seed_list],
+    ),
+    dict(),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+
+
+@loop(("true", "ref"))
+def _(layers_src_seed):
+    filing(
+        vxw,
+        [("posterior_mean.jld2", dict(layers_src_seed=layers_src_seed))],
+        dict(
+            exe=jp(vx_b, "extract_m_hat.jl"),
+            data=env[kof("inv.json", dict(layers_src_seed=layers_src_seed))],
+        ),
+        dict(),
+        env,
+    )(make_run_with_temp(julia, vxt, dict()))
+
+
+@loop(
+    (
+        (
+            [("posterior_mean.pdf", dict())],
+            dict(
+                exe=jp(vx_b, "plot_m.jl"),
+                src_params=env[kof("src_params.jld2", dict())],
+                m=env[kof("posterior_mean.jld2", dict())],
+            ),
+            [
+                "src__nt_total",
+                "src__dt",
+                "src__ix_hypo",
+                "src__iy_hypo",
+                "src__nx",
+                "src__ny",
+            ],
+            (lambda: all_figs.append(env[kof("posterior_mean.pdf", dict())]),
+             lambda: set_daily("posterior_mean.pdf", dict(), daily, env)),
+        ),
+        (
+            [("compare_mean_of_mean_and_true_m.pdf", dict())],
+            dict(
+                exe=jp(vx_b, "plot_compare_mean_of_mean_m_and_true_m.jl"),
+                src_params=env[kof("src_params.jld2", dict())],
+                mean_of_posterior_mean=env[kof("mean_of_posterior_mean.jld2", dict())],
+                true_m=env[kof("true_m.jld2", dict())],
+            ),
+            [
+                "src__nt_total",
+                "src__dt",
+                "src__ix_hypo",
+                "src__iy_hypo",
+                "src__nx",
+                "src__ny",
+            ],
+            (lambda: all_figs.append(env[kof("compare_mean_of_mean_and_true_m.pdf", dict())]),
+             lambda: set_daily("compare_mean_of_mean_and_true_m.pdf", dict(), daily, env)),
+        ),
+    ),
+    tform=lambda x: x,
+)
+def _(targets, deps, ks, posts):
+    filing(
+        vxw,
+        targets,
+        deps,
+        copy_dict(
+            conf,
+            ks,
+        ),
+        env,
+    )(make_run_with_temp(julia, vxt, dict()))
+    for post in posts:
+        post()
+
+
+@loop(("true", "ref"))
+def _(layers_src_seed):
+    filing(
+        vxw,
+        [(f"compare_{layers_src_seed}_posterior_mean_and_true_m.pdf", dict())],
+        dict(
+            exe=jp(vx_b, "plot_compare_x_m_and_true_m.jl"),
+            src_params=env[kof("src_params.jld2", dict())],
+            posterior_mean=env[kof("posterior_mean.jld2", dict(layers_src_seed=layers_src_seed))],
+            true_m=env[kof("true_m.jld2", dict())],
+            inv=env[kof("inv.jld2", dict(layers_src_seed=layers_src_seed))],
+        ),
+        copy_dict(
+            conf,
+            [
+                "src__nt_total",
+                "src__dt",
+                "src__ix_hypo",
+                "src__iy_hypo",
+                "src__nx",
+                "src__ny",
+            ],
+        ),
+        env,
+    )(make_run_with_temp(julia, vxt, dict()))
+    all_figs.append(env[kof(f"compare_{layers_src_seed}_posterior_mean_and_true_m.pdf", dict())])
+    set_daily(f"compare_{layers_src_seed}_posterior_mean_and_true_m.pdf", dict(), daily, env)
+
+
+filing(
+    vxw,
+    [("compare_posterior_mean_and_true_m.pdf", dict())],
+    dict(
+        exe=jp(vx_b, "plot_compare_m_and_true_m.jl"),
+        src_params=env[kof("src_params.jld2", dict())],
+        posterior_mean=env[kof("posterior_mean.jld2", dict())],
+        true_m=env[kof("true_m.jld2", dict())],
+        posterior_mean_cov=env[kof("posterior_mean_cov.jld2", dict())],
+    ),
+    copy_dict(
+        conf,
+        [
+            "src__nt_total",
+            "src__dt",
+            "src__ix_hypo",
+            "src__iy_hypo",
+            "src__nx",
+            "src__ny",
+        ],
+    ),
+    env,
+)(make_run_with_temp(julia, vxt, dict()))
+all_figs.append(env[kof("compare_posterior_mean_and_true_m.pdf", dict())])
+set_daily("compare_posterior_mean_and_true_m.pdf", dict(), daily, env)
+
+
+@loop(
+    (
+        ("compare_posterior_mean_and_true_m_total.pdf", "plot_compare_m_and_true_m_total.jl"),
+        ("compare_posterior_mean_and_true_m_rate.pdf", "plot_compare_m_and_true_m_rate.jl"),
+        ("potency_cov.pdf", "plot_potency_cov.jl"),
+    ),
+    tform=lambda x: x,
+)
+def _(name, exe):
+    filing(
+        vxw,
+        [(name, dict())],
+        dict(
+            exe=jp(vx_b, exe),
+            src_params=env[kof("src_params.jld2", dict())],
+            posterior_mean=env[kof("posterior_mean.jld2", dict())],
+            true_m=env[kof("true_m.jld2", dict())],
+            posterior_mean_cov=env[kof("posterior_mean_cov.jld2", dict())],
+        ),
+        copy_dict(
+            conf,
+            [
+                "src__nt_total",
+                "src__dt",
+                "src__ix_hypo",
+                "src__iy_hypo",
+                "src__nx",
+                "src__ny",
+            ],
+        ),
+        env,
+    )(make_run_with_temp(julia, vxt, dict()))
+    all_figs.append(env[kof(name, dict())])
+    set_daily(name, dict(), daily, env)
+
+
+@filing(
+    vxw,
+    [
+        ("all_figs.pdf", dict()),
+        ("all_figs.txt", dict()),
+    ],
+    dict(data_list=all_figs),
+    dict(),
+    env,
+)
+def _(j, arg):
+    for t in j.ts:
+        mkdir(dirname(t))
+    ds = sorted(j.ds, key=lambda path: tuple(reversed(os.path.split(path))))
+    sh(f"pdfunite {' '.join(ds)} {j.ts[0]}")
+    write_list(j.ts[1], ds)
+
+    trash_dir = jp(os.path.expanduser("~"), "d", "trash", "_ssi", current_time.strftime("%Y-%m-%dT%H:%M:%S"))
+    mkdir(trash_dir)
+    for t in j.ts:
+        sh(f"cp -f {t} {trash_dir}")
+phony("all", ["daily", env[kof("all_figs.pdf", dict())], env[kof("all_figs.txt", dict())]])
+
+
+if __name__ == "__main__":
+    dsl.main(sys.argv)
+```
+
 # `logging`
 
 ```py
