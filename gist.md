@@ -1,3 +1,8 @@
+```py
+with open("lib.py") as fp:
+    exec(fp.read())
+```
+
 # `build.py`
 
 ```py
