@@ -1,3 +1,7 @@
+```
+sshfs -o auto_cache
+```
+
 ```py
 with open("lib.py") as fp:
     exec(fp.read())
