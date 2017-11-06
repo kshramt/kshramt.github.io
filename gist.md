@@ -1,3 +1,12 @@
+# `conf_of`
+
+```
+import collections
+
+def _conf_of(**kwargs):
+    return collections.namedtuple("_Conf", kwargs.keys())(**kwargs)
+```
+
 ```
 sshfs -o auto_cache
 ```
