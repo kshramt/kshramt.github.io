@@ -10,7 +10,7 @@ def normalizer_of(X, lower, upper, threshold):
 
     mean = []
     std = []
-    for j in range(np.shape(X)[1]):
+    for j in range(X.shape[1]):
         Xj = X[:, j]
         Xj_masked = X[(np.percentile(Xj, lower) <= Xj) & (Xj <= np.percentile(Xj, upper)), j]
         mean.append(np.mean(Xj_masked))
