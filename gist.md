@@ -1,3 +1,29 @@
+# `normalizer_of`
+
+```py
+import numpy as np
+
+
+def normalizer_of(X, lower, upper, threshold):
+    assert 0 <= lower <= upper <= 100
+    assert 0 < threshold <= 100
+
+    mean = []
+    std = []
+    for j in range(X.shape[1]):
+        Xj = X[:, j]
+        Xj_masked = X[(np.percentile(Xj, lower) <= Xj) & (Xj <= np.percentile(Xj, upper)), j]
+        mean.append(np.mean(Xj_masked))
+        std.append(np.std(Xj_masked))
+
+    Y = (X - mean)/std
+    distances = np.sum(Y**2, axis=1)
+    mask = distances <= np.percentile(distances, threshold)
+
+    Z = X[mask]
+    return dict(mean=np.mean(Z, axis=0), std=np.std(Z, axis=0))
+```
+
 # `conf_of`
 
 ```
