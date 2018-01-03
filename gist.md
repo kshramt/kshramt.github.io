@@ -18,6 +18,10 @@ class Conf(object):
 
     def _dict(self):
         return self.__dict__.copy()
+
+    def _dict_rec(self):
+        cls = type(self)
+        return {k: v._dict_rec() if isinstance(v, cls) else v for k, v in self.__dict__.items()}
 ```
 
 # `normalizer_of`
