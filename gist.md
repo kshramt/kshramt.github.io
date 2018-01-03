@@ -12,6 +12,10 @@ class Conf(object):
     def __getattr__(self, k):
         return self.__dict__[k]
 
+    def __repr__(self):
+        args = ", ".join(f"{k}={v}" for k, v in self.__dict__.items())
+        return f"{self.__class__.__name__}({args})"
+
     def _update(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
