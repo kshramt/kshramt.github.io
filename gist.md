@@ -2,6 +2,31 @@
 
 ```
 class Conf(object):
+    """
+    >>> conf = Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    >>> conf
+    Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    >>> conf.a
+    1
+    >>> conf.b.c
+    2
+    >>> conf.a = 99
+    >>> conf.b.c = 88
+    >>> conf
+    Conf(a=99, b=Conf(c=88, d=Conf(e=3)))
+    >>> conf.a = 1
+    >>> conf.b.c = 2
+    >>> conf._update(p=9, r=10)
+    Conf(a=1, b=Conf(c=2, d=Conf(e=3)), p=9, r=10)
+    >>> conf._to_dict_rec()
+    {'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10}
+    >>> conf._of_dict_rec({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}})
+    Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    >>> conf._to_dict()
+    {'a': 1, 'b': Conf(c=2, d=Conf(e=3))}
+    >>> conf._of_dict({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10})
+    Conf(a=1, b={'c': 2, 'd': {'e': 3}}, p=9, r=10)
+    """
 
     def __init__(self, **kwargs):
         self._update(**kwargs)
