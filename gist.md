@@ -15,13 +15,21 @@ class Conf(object):
     def _update(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
+        return self
 
-    def _dict(self):
+    def _to_dict(self):
         return self.__dict__.copy()
 
-    def _dict_rec(self):
-        cls = type(self)
-        return {k: v._dict_rec() if isinstance(v, cls) else v for k, v in self.__dict__.items()}
+    def _to_dict_rec(self):
+        return {k: v._to_dict_rec() if isinstance(v, self.__class__) else v for k, v in self.__dict__.items()}
+
+    def _of_dict(self, d):
+        return self._update(**d)
+
+    def _of_dict_rec(self, d):
+        for k, v in d.items():
+            setattr(self, k, self.__class__()._of_dict_rec(v) if isinstance(v, dict) else v)
+        return self
 ```
 
 # `normalizer_of`
