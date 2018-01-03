@@ -28,9 +28,11 @@ class Conf(object):
         return {k: v._to_dict_rec() if isinstance(v, self.__class__) else v for k, v in self.__dict__.items()}
 
     def _of_dict(self, d):
+        self.__dict__.clear()
         return self._update(**d)
 
     def _of_dict_rec(self, d):
+        self.__dict__.clear()
         for k, v in d.items():
             setattr(self, k, self.__class__()._of_dict_rec(v) if isinstance(v, dict) else v)
         return self
