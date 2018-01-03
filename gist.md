@@ -1,6 +1,6 @@
 # `Conf`
 
-```
+```py
 class Conf(object):
     """
     >>> conf = Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
