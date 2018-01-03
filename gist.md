@@ -3,6 +3,10 @@
 ```py
 class Conf(object):
     """
+    >>> conf = Conf()
+    >>> conf.z = 99
+    >>> conf
+    Conf(z=99)
     >>> conf = Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
     >>> conf
     Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
