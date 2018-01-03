@@ -1,3 +1,25 @@
+# `Conf`
+
+```
+class Conf(object):
+
+    def __init__(self, **kwargs):
+        self._update(**kwargs)
+
+    def __setattr__(self, k, v):
+        self.__dict__[k] = v
+
+    def __getattr__(self, k):
+        return self.__dict__[k]
+
+    def _update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def _dict(self):
+        return self.__dict__.copy()
+```
+
 # `normalizer_of`
 
 ```py
