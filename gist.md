@@ -20,7 +20,7 @@ class Conf(object):
     Conf(a=99, b=Conf(c=88, d=Conf(e=3)))
     >>> conf.a = 1
     >>> conf.b.c = 2
-    >>> conf._update(p=9, r=10)
+    >>> conf._update(dict(p=9, r=10))
     Conf(a=1, b=Conf(c=2, d=Conf(e=3)), p=9, r=10)
     >>> conf._to_dict_rec()
     {'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10}
@@ -33,7 +33,7 @@ class Conf(object):
     """
 
     def __init__(self, **kwargs):
-        self._update(**kwargs)
+        self._update(kwargs)
 
     def __setattr__(self, k, v):
         self.__dict__[k] = v
@@ -45,8 +45,8 @@ class Conf(object):
         args = ", ".join(f"{k}={v}" for k, v in self.__dict__.items())
         return f"{self.__class__.__name__}({args})"
 
-    def _update(self, **kwargs):
-        for k, v in kwargs.items():
+    def _update(self, d):
+        for k, v in d.items():
             setattr(self, k, v)
         return self
 
@@ -58,7 +58,7 @@ class Conf(object):
 
     def _of_dict(self, d):
         self.__dict__.clear()
-        return self._update(**d)
+        return self._update(d)
 
     def _of_dict_rec(self, d):
         self.__dict__.clear()
