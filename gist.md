@@ -1,3 +1,34 @@
+# Cython
+
+```
+cat <<EOF >| cy.py
+import sys
+
+
+class C(object):
+
+    def __init__(self, x):
+        self.x = x
+
+
+def main(argv):
+    print(argv)
+    c = C(3)
+    print(c)
+    print(c.x)
+
+
+if __name__ == "__main__":
+    main(sys.argv)
+EOF
+
+cython --embed cy.py
+gcc-mp-7 -O3 -I /opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m -L/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib cy.c
+strip a.out
+
+./a.out
+ ```
+
 # `Conf`
 
 ```py
