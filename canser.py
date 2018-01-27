@@ -3,11 +3,11 @@ Supported data types:
 
 - Integer (64 bits)
 - Float (64 bits)
-- String (UTF8)
-- Vector
+- String (UTF-8)
+- List
 - Dictionary
 
-Little endiannness is assumed.
+Little endianness is assumed.
 """
 
 import struct
@@ -16,23 +16,23 @@ import struct
 def save(x, fp):
     if isinstance(x, float):
         fp.write(b"f")
-        fp.write(struct.pack("d", x))
+        fp.write(struct.pack("<d", x))
     elif isinstance(x, int):
         fp.write(b"i")
-        _save_int(x)
+        _save_int(x, fp)
     elif isinstance(x, str):
         b = x.encode("utf-8")
         fp.write(b"s")
-        _save_int(len(b))
+        _save_int(len(b), fp)
         fp.write(b)
     elif isinstance(x, list):
         fp.write(b"l")
-        _save_int(len(x))
+        _save_int(len(x), fp)
         for v in x:
             save(v, fp)
     elif isinstance(x, dict):
         fp.write(b"d")
-        _save_int(len(x))
+        _save_int(len(x), fp)
         for k in sorted(x.keys()):
             save(k, fp)
             save(x[k], fp)
@@ -43,7 +43,7 @@ def save(x, fp):
 def load(fp):
     tag = fp.read(1)
     if tag == b"f":
-        return struct.unpack("d", fp.read(8))[0]
+        return struct.unpack("<d", fp.read(8))[0]
     elif tag == b"i":
         return _load_int(fp)
     elif tag == b"s":
@@ -61,9 +61,9 @@ def load(fp):
         raise ValueError(f"Invalid tag {tag} for {fp}")
 
 
-def _save_int(fp, x):
-    return fp.write(struct.pack("q", x))
+def _save_int(x, fp):
+    return fp.write(struct.pack("<q", x))
 
 
 def _load_int(fp):
-    return struct.unpack("q", fp.read(8))[0]
+    return struct.unpack("<q", fp.read(8))[0]
