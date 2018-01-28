@@ -1,3 +1,9 @@
+# dot
+
+```bash
+dot -Tpdf -Grankdir=LR -Nshape=plaintext -Ecolor='#00000088'
+```
+
 # Cython
 
 ```
