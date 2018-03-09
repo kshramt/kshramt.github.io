@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 plt.rcParams["figure.titlesize"] = "xx-large"
 plt.rcParams["axes.titlesize"] = "x-large"
-plt.rcParams["axes.labelsize"] = "large"
+plt.rcParams["axes.labelsize"] = "x-large"
 plt.rcParams["xtick.labelsize"] = "large"
 plt.rcParams["ytick.labelsize"] = "large"
 plt.rcParams["lines.linewidth"] = 2
