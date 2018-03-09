@@ -1,3 +1,17 @@
+# plt.rcParms
+
+```py
+import matplotlib.pyplot as plt
+plt.rcParams["figure.titlesize"] = "xx-large"
+plt.rcParams["axes.titlesize"] = "x-large"
+plt.rcParams["axes.labelsize"] = "large"
+plt.rcParams["xtick.labelsize"] = "large"
+plt.rcParams["ytick.labelsize"] = "large"
+plt.rcParams["lines.linewidth"] = 2
+plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Bitstream Vera Sans", "Noto Sans CJK JP"]
+plt.rcParams["font.serif"] = ["DejaVu Serif", "Bitstream Vera Serif", "Noto Serif CJK JP"]
+```
+
 # dot
 
 ```bash
