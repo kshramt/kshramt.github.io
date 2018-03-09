@@ -30,7 +30,7 @@ EOF
 
 cython --embed cy.py
 gcc-mp-7 -O3 -I /opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m -L/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib cy.c
-strip a.out
+strip -R .note -R .comment a.out
 
 ./a.out
  ```
