@@ -1,3 +1,9 @@
+# ja
+
+```
+javascript:var%20t=((window.getSelection&&window.getSelection())||(document.getSelection&&document.getSelection())||(document.selection&&document.selection.createRange&&document.selection.createRange().text));var%20e=(document.charset||document.characterSet);if(t!=''){location.href='http://translate.google.com/?text='+t+'&hl=ja&langpair=auto|ja&tbb=1&ie='+e;}else{location.href='http://translate.google.com/translate?u='+encodeURIComponent(location.href)+'&hl=ja&langpair=auto|ja&tbb=1&ie='+e;};
+```
+
 # plt.rcParms
 
 ```py
