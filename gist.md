@@ -173,7 +173,7 @@ def _conf_of(**kwargs):
 ```
 
 ```
-sshfs -o auto_cache
+sshfs -o auto_cache -o reconnect
 ```
 
 ```py
