@@ -1,3 +1,114 @@
+# `prep.py`
+
+```py
+#!/usr/bin/python
+
+import collections
+
+
+def stats_of(df, col_fns):
+    """
+    == Examples
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(dict(a=[1, 2, 9], b=[-1, 2, 8]))
+    >>> stats_of(df, [("a", ["median"]), ("b", ["mean", "median"])])
+    OrderedDict([('a', {'median': 2.0}), ('b', {'mean': 3.0, 'median': 2.0})])
+    """
+    ret = collections.OrderedDict()
+    for col, fns in col_fns:
+        ret[col] = {fn: getattr(df[col], fn)() for fn in fns}
+    return ret
+
+
+def flag_nan(df, cols):
+    """
+    == Examples
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(dict(a=[1.0, None, 9.0], b=[9, 8, 7]))
+    >>> flag_nan(df, ["a"])
+         a  b  a_nan
+    0  1.0  9  False
+    1  NaN  8   True
+    2  9.0  7  False
+    """
+    ret = df.copy(deep=False)
+    seen = set(ret.columns)
+    for col in cols:
+        set_uniquely(ret, f"{col}_nan", df[col].isna(), seen)
+    return ret
+
+
+def impute(df, col_val):
+    """
+    Replace NaN's in df[col<N>] with val<N>.
+
+    == Examples
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(dict(a=[1.0, None, 9.0], b=[9, 8, 7]))
+    >>> impute(df, [("a", 0)])
+         a  b
+    0  1.0  9
+    1  0.0  8
+    2  9.0  7
+    """
+    ret = df.copy(deep=False)
+    for col, val in col_val:
+        vs = ret[col].values.copy()
+        vs[ret[col].isna().values] = val
+        ret[col] = vs
+    return ret
+
+
+def levels_of(df, cols):
+    """
+    == Examples
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(dict(a=["a", None, "a", "a", "b", "b"], b=[1, 2, 2, 3, 3, 3]))
+    >>> levels_of(df, ["a", "b"])
+    OrderedDict([('a', OrderedDict([('a', 3), ('b', 2)])), ('b', OrderedDict([(3, 3), (2, 2), (1, 1)]))])
+    """
+    ret = collections.OrderedDict()
+    for col in cols:
+        ret[col] = collections.OrderedDict(sorted(list(collections.Counter(df[col].dropna().values).items()), key=lambda x: x[1], reverse=True))
+    return ret
+
+
+def one_hot(df, col_levels):
+    """
+    == Examples
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(dict(a=["a", None, "a", "a", "b", "b"], b=[1, 2, 2, 3, 3, 3]))
+    >>> one_hot(df, [("a", ["a", "b"]), ("b", [2, 1])])
+         a_a    a_b    b_2    b_1
+    0   True  False  False   True
+    1  False  False   True  False
+    2   True  False   True  False
+    3   True  False  False  False
+    4  False   True  False  False
+    5  False   True  False  False
+    """
+    ret = df.copy(deep=False)
+    seen = set(ret.columns)
+    for col, levels in col_levels:
+        ser = ret[col]
+        ret = ret.drop(col, axis="columns")
+        for level in levels:
+            set_uniquely(ret, f"{col}_{level}", (ser == level).values, seen)
+    return ret
+
+
+def set_uniquely(df, col, vals, seen):
+    assert col not in seen, (col, seen)
+    seen.add(col)
+    df[col] = vals
+    return df
+```
+
 # ja
 
 ```
