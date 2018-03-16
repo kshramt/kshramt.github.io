@@ -125,8 +125,8 @@ plt.rcParams["axes.labelsize"] = "x-large"
 plt.rcParams["xtick.labelsize"] = "large"
 plt.rcParams["ytick.labelsize"] = "large"
 plt.rcParams["lines.linewidth"] = 2
-plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Bitstream Vera Sans", "Noto Sans CJK JP"]
-plt.rcParams["font.serif"] = ["DejaVu Serif", "Bitstream Vera Serif", "Noto Serif CJK JP"]
+plt.rcParams["font.sans-serif"] = ["Noto Sans CJK JP", "DejaVu Sans", "Bitstream Vera Sans"]
+plt.rcParams["font.serif"] = ["Noto Serif CJK JP", "DejaVu Serif", "Bitstream Vera Serif"]
 ```
 
 # dot
