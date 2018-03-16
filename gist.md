@@ -73,7 +73,7 @@ def levels_of(df, cols):
     """
     ret = collections.OrderedDict()
     for col in cols:
-        ret[col] = collections.OrderedDict(sorted(list(collections.Counter(df[col].dropna().values).items()), key=lambda x: x[1], reverse=True))
+        ret[col] = collections.OrderedDict(sorted(collections.Counter(df[col].dropna().values).items(), key=lambda x: x[1], reverse=True))
     return ret
 
 
