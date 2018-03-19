@@ -29,14 +29,14 @@ def flag_nan(df, cols):
     >>> df = pd.DataFrame(dict(a=[1.0, None, 9.0], b=[9, 8, 7]))
     >>> flag_nan(df, ["a"])
          a  b  a_nan
-    0  1.0  9  False
-    1  NaN  8   True
-    2  9.0  7  False
+    0  1.0  9      0
+    1  NaN  8      1
+    2  9.0  7      0
     """
     ret = df.copy(deep=False)
     seen = set(ret.columns)
     for col in cols:
-        set_uniquely(ret, f"{col}_nan", df[col].isna(), seen)
+        set_uniquely(ret, f"{col}_nan", df[col].isna().astype(int), seen)
     return ret
 
 
@@ -84,13 +84,13 @@ def one_hot(df, col_levels):
     >>> import pandas as pd
     >>> df = pd.DataFrame(dict(a=["a", None, "a", "a", "b", "b"], b=[1, 2, 2, 3, 3, 3]))
     >>> one_hot(df, [("a", ["a", "b"]), ("b", [2, 1])])
-         a_a    a_b    b_2    b_1
-    0   True  False  False   True
-    1  False  False   True  False
-    2   True  False   True  False
-    3   True  False  False  False
-    4  False   True  False  False
-    5  False   True  False  False
+       a_a  a_b  b_2  b_1
+    0    1    0    0    1
+    1    0    0    1    0
+    2    1    0    1    0
+    3    1    0    0    0
+    4    0    1    0    0
+    5    0    1    0    0
     """
     ret = df.copy(deep=False)
     seen = set(ret.columns)
@@ -98,7 +98,7 @@ def one_hot(df, col_levels):
         ser = ret[col]
         ret = ret.drop(col, axis="columns")
         for level in levels:
-            set_uniquely(ret, f"{col}_{level}", (ser == level).values, seen)
+            set_uniquely(ret, f"{col}_{level}", (ser == level).values.astype(int), seen)
     return ret
 
 
