@@ -1,3 +1,112 @@
+# `random_access_line.py`
+
+```py
+def getline(fp, i, heads):
+    fp.seek(heads[i])
+    return fp.readline()
+
+
+def heads_of(fp):
+    """
+    == Inputs
+    fp:: Should be opened with a binary mode.
+
+    == Returns
+
+    * Offsets in byte.
+    """
+    i_prev = 0
+    fp.seek(i_prev)
+    for l in fp:
+        i_now = i_prev + len(l)
+        yield i_prev
+        i_prev = i_now
+
+
+def _test():
+    import gzip
+    import os
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        # with the EOF \n
+        file = os.path.join(td, "s.txt")
+        with open(file, "w") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく\n")
+        with open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with open(file, "r") as fp:
+            assert getline(fp, 2, heads) == "かきく\n"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 2, heads) == "かきく\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, -1, heads) == "かきく\n"
+        # without the EOF \n
+        file = os.path.join(td, "s.txt")
+        with open(file, "w") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく")
+        with open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with open(file, "r") as fp:
+            assert getline(fp, 2, heads) == "かきく"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 2, heads) == "かきく"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, -1, heads) == "かきく"
+        # GZip with the EOF \n
+        file = os.path.join(td, "s.txt.gz")
+        with gzip.open(file, "wt") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく\n")
+        with gzip.open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with gzip.open(file, "rt") as fp:
+            assert getline(fp, 2, heads) == "かきく\n"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 2, heads) == "かきく\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, -1, heads) == "かきく\n"
+        # GZip with the EOF \n
+        file = os.path.join(td, "s.txt.gz")
+        with gzip.open(file, "wt") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく")
+        with gzip.open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with gzip.open(file, "rt") as fp:
+            assert getline(fp, 2, heads) == "かきく"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 2, heads) == "かきく"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 0, heads) == "あい\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, 1, heads) == "abc\n"
+            assert getline(fp, -1, heads) == "かきく"
+
+
+if __name__ == "__main__":
+    _test()
+```
+
 # `prep.py`
 
 ```py
