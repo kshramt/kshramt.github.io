@@ -1,3 +1,15 @@
+# `hex_of_deps`
+
+```py
+def hex_of_deps(deps):
+    def h(s):
+        import hashlib
+        return hashlib.sha256(s.encode("utf-8")).hexdigest()
+    return h("".join(map(h, sorted(set(deps)))))
+```
+
+`name/params/deps/multi.dat`
+
 # `random_access_line.py`
 
 ```py
