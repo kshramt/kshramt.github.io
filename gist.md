@@ -15,6 +15,7 @@ def heads_of(fp):
 
     * Offsets in byte.
     """
+    assert isinstance(fp.read(0), bytes), fp
     i_prev = 0
     fp.seek(i_prev)
     for l in fp:
