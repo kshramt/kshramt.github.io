@@ -4,7 +4,7 @@
 def hex_of_deps(deps):
     def h(s):
         import hashlib
-        return hashlib.sha256(s.encode("utf-8")).hexdigest()
+        return hashlib.sha1(s.encode("utf-8")).hexdigest()
     return h("".join(map(h, sorted(set(deps)))))
 ```
 
