@@ -1,7 +1,7 @@
 # `random_access_line.py`
 
 ```py
-def getline(fp, i, heads):
+def getline(fp, heads, i):
     fp.seek(heads[i])
     return fp.readline()
 
@@ -24,6 +24,7 @@ def heads_of(fp):
 
 
 def _test():
+    import functools
     import gzip
     import os
     import tempfile
@@ -38,15 +39,16 @@ def _test():
         with open(file, "rb") as fp:
             heads = list(heads_of(fp))
         with open(file, "r") as fp:
-            assert getline(fp, 2, heads) == "かきく\n"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 2, heads) == "かきく\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, -1, heads) == "かきく\n"
+            gl = functools.partial(getline, fp, heads)
+            assert gl(2) == "かきく\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(2) == "かきく\n"
+            assert gl(1) == "abc\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(1) == "abc\n"
+            assert gl(-1) == "かきく\n"
         # without the EOF \n
         file = os.path.join(td, "s.txt")
         with open(file, "w") as fp:
@@ -56,15 +58,15 @@ def _test():
         with open(file, "rb") as fp:
             heads = list(heads_of(fp))
         with open(file, "r") as fp:
-            assert getline(fp, 2, heads) == "かきく"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 2, heads) == "かきく"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, -1, heads) == "かきく"
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, -1) == "かきく"
         # GZip with the EOF \n
         file = os.path.join(td, "s.txt.gz")
         with gzip.open(file, "wt") as fp:
@@ -74,15 +76,16 @@ def _test():
         with gzip.open(file, "rb") as fp:
             heads = list(heads_of(fp))
         with gzip.open(file, "rt") as fp:
-            assert getline(fp, 2, heads) == "かきく\n"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 2, heads) == "かきく\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, -1, heads) == "かきく\n"
+            gl = functools.partial(getline, fp, heads)
+            assert gl(2) == "かきく\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(2) == "かきく\n"
+            assert gl(1) == "abc\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(1) == "abc\n"
+            assert gl(-1) == "かきく\n"
         # GZip with the EOF \n
         file = os.path.join(td, "s.txt.gz")
         with gzip.open(file, "wt") as fp:
@@ -92,15 +95,15 @@ def _test():
         with gzip.open(file, "rb") as fp:
             heads = list(heads_of(fp))
         with gzip.open(file, "rt") as fp:
-            assert getline(fp, 2, heads) == "かきく"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 2, heads) == "かきく"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 0, heads) == "あい\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, 1, heads) == "abc\n"
-            assert getline(fp, -1, heads) == "かきく"
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, -1) == "かきく"
 
 
 if __name__ == "__main__":
