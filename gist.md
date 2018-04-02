@@ -1,3 +1,9 @@
+# Word diff
+
+```bash
+git diff --color-words --no-index --word-diff draft.tex draft_v180402074422.tex
+```
+
 # `hex_of_deps`
 
 ```py
