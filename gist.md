@@ -297,18 +297,18 @@ strip -R .note -R .comment a.out
 ./a.out
  ```
 
-# `Conf`
+# `ddict`
 
 ```py
-class Conf(object):
+class ddict(object):
     """
-    >>> conf = Conf()
+    >>> conf = ddict()
     >>> conf.z = 99
     >>> conf
-    Conf(z=99)
-    >>> conf = Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    ddict(z=99)
+    >>> conf = ddict(a=1, b=ddict(c=2, d=ddict(e=3)))
     >>> conf
-    Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    ddict(a=1, b=ddict(c=2, d=ddict(e=3)))
     >>> conf.a
     1
     >>> conf.b.c
@@ -316,32 +316,35 @@ class Conf(object):
     >>> conf.a = 99
     >>> conf.b.c = 88
     >>> conf
-    Conf(a=99, b=Conf(c=88, d=Conf(e=3)))
+    ddict(a=99, b=ddict(c=88, d=ddict(e=3)))
     >>> conf.a = 1
     >>> conf.b.c = 2
     >>> conf._update(dict(p=9, r=10))
-    Conf(a=1, b=Conf(c=2, d=Conf(e=3)), p=9, r=10)
+    ddict(a=1, b=ddict(c=2, d=ddict(e=3)), p=9, r=10)
     >>> conf._to_dict_rec()
     {'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10}
     >>> conf._of_dict_rec({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}})
-    Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    ddict(a=1, b=ddict(c=2, d=ddict(e=3)))
     >>> conf._to_dict()
-    {'a': 1, 'b': Conf(c=2, d=Conf(e=3))}
+    {'a': 1, 'b': ddict(c=2, d=ddict(e=3))}
     >>> conf._of_dict({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10})
-    Conf(a=1, b={'c': 2, 'd': {'e': 3}}, p=9, r=10)
+    ddict(a=1, b={'c': 2, 'd': {'e': 3}}, p=9, r=10)
     """
 
     def __init__(self, **kwargs):
+        super().__setattr__("_data", dict())
         self._update(kwargs)
 
     def __setattr__(self, k, v):
-        self.__dict__[k] = v
+        if k in self.__dict__:
+            raise ValueError(f"Tried to overwrite {k} of {self} by {v}")
+        self._data[k] = v
 
     def __getattr__(self, k):
-        return self.__dict__[k]
+        return self._data[k]
 
     def __repr__(self):
-        args = ", ".join(f"{k}={v}" for k, v in self.__dict__.items())
+        args = ", ".join(f"{k}={repr(v)}" for k, v in self._data.items())
         return f"{self.__class__.__name__}({args})"
 
     def _update(self, d):
@@ -350,17 +353,17 @@ class Conf(object):
         return self
 
     def _to_dict(self):
-        return self.__dict__.copy()
+        return self._data.copy()
 
     def _to_dict_rec(self):
-        return {k: v._to_dict_rec() if isinstance(v, self.__class__) else v for k, v in self.__dict__.items()}
+        return {k: v._to_dict_rec() if isinstance(v, self.__class__) else v for k, v in self._data.items()}
 
     def _of_dict(self, d):
-        self.__dict__.clear()
+        self._data.clear()
         return self._update(d)
 
     def _of_dict_rec(self, d):
-        self.__dict__.clear()
+        self._data.clear()
         for k, v in d.items():
             setattr(self, k, self.__class__()._of_dict_rec(v) if isinstance(v, dict) else v)
         return self
