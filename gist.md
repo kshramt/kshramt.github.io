@@ -1,3 +1,7 @@
+```
+cat --show-nonprinting
+```
+
 # Word diff
 
 ```bash
