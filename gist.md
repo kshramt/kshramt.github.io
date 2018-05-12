@@ -1920,7 +1920,6 @@ tex-gyre
 tex-gyre-math
 tex-ini-files
 tex4ht
-texconfig
 texdoc
 texlive-common
 texlive-docindex
