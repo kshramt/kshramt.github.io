@@ -3,8 +3,8 @@
 ```haskell
 filter' f rf acc x = if f x then rf acc x else acc
 map' f rf acc x = rf acc (f x)
-transducers tf rf = foldl (tf rf) -- Data.List.foldl
--- Prelude> transducers (map' (\x-> x * x) . filter' (\x-> (rem x 2 == 1))) (+) 0 [1, 2, 3]
+transduce tf rf = foldl (tf rf) -- Data.List.foldl
+-- Prelude> transduce (map' (\x-> x * x) . filter' (\x-> (rem x 2 == 1))) (+) 0 [1, 2, 3]
 -- 10
 ```
 
