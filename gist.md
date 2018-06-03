@@ -1,3 +1,7 @@
+```bash
+ssh -o ProxyCommand='ssh -W %h:%p who@gate.com' -p 22 me@target.com
+```
+
 # transducers.hs
 
 ```haskell
