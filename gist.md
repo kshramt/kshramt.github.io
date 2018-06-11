@@ -1,4 +1,8 @@
 ```bash
+sleep 3600 && osascript -e 'tell application "Finder" to sleep'
+```
+
+```bash
 ssh -o ProxyCommand='ssh -W %h:%p who@gate.com' -p 22 me@target.com
 ```
 
