@@ -1,4 +1,8 @@
 ```bash
+python3 -m doctest -v lib.py
+```
+
+```bash
 sleep 3600 && osascript -e 'tell application "Finder" to sleep'
 ```
 
