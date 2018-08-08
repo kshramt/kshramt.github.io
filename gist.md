@@ -1,9 +1,163 @@
-# `git stash push`
+```
+# https://stackoverflow.com/a/5506483
+git stash push <path>
+```
 
-https://stackoverflow.com/a/5506483
+```bash
+python3 -m doctest -v lib.py
+```
+
+```bash
+sleep 3600 && osascript -e 'tell application "Finder" to sleep'
+```
+
+```bash
+ssh -o ProxyCommand='ssh -W %h:%p who@gate.com' -p 22 me@target.com
+```
+
+# transducers.hs
+
+```haskell
+filter' f rf acc x = if f x then rf acc x else acc
+map' f rf acc x = rf acc (f x)
+transduce tf rf = foldl (tf rf) -- Data.List.foldl
+-- Prelude> transduce (map' (\x-> x * x) . filter' (\x-> (rem x 2 == 1))) (+) 0 [1, 2, 3]
+-- 10
+```
 
 ```
-git stash push <path>
+cat --show-nonprinting
+```
+
+# Word diff
+
+```bash
+git diff --no-index --color-words draft.tex draft_v180402074422.tex
+```
+
+# `hex_of_deps`
+
+```py
+def hex_of_deps(deps):
+    def h(s):
+        import hashlib
+        return hashlib.sha1(s.encode("utf-8")).hexdigest()
+    return h("".join(map(h, sorted(set(deps)))))
+```
+
+`name/params/deps/multi.dat`
+
+# `random_access_line.py`
+
+```py
+def getline(fp, heads, i):
+    fp.seek(heads[i])
+    return fp.readline()
+
+
+def heads_of(fp):
+    """
+    == Inputs
+    fp:: Should be opened with a binary mode.
+
+    == Returns
+
+    * Offsets in byte.
+    """
+    assert isinstance(fp.read(0), bytes), fp
+    i_prev = 0
+    fp.seek(i_prev)
+    for l in fp:
+        i_now = i_prev + len(l)
+        yield i_prev
+        i_prev = i_now
+
+
+def _test():
+    import functools
+    import gzip
+    import os
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        # with the EOF \n
+        file = os.path.join(td, "s.txt")
+        with open(file, "w") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく\n")
+        with open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with open(file, "r") as fp:
+            gl = functools.partial(getline, fp, heads)
+            assert gl(2) == "かきく\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(2) == "かきく\n"
+            assert gl(1) == "abc\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(1) == "abc\n"
+            assert gl(-1) == "かきく\n"
+        # without the EOF \n
+        file = os.path.join(td, "s.txt")
+        with open(file, "w") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく")
+        with open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with open(file, "r") as fp:
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, -1) == "かきく"
+        # GZip with the EOF \n
+        file = os.path.join(td, "s.txt.gz")
+        with gzip.open(file, "wt") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく\n")
+        with gzip.open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with gzip.open(file, "rt") as fp:
+            gl = functools.partial(getline, fp, heads)
+            assert gl(2) == "かきく\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(2) == "かきく\n"
+            assert gl(1) == "abc\n"
+            assert gl(0) == "あい\n"
+            assert gl(1) == "abc\n"
+            assert gl(1) == "abc\n"
+            assert gl(-1) == "かきく\n"
+        # GZip with the EOF \n
+        file = os.path.join(td, "s.txt.gz")
+        with gzip.open(file, "wt") as fp:
+            fp.write("あい\n")
+            fp.write("abc\n")
+            fp.write("かきく")
+        with gzip.open(file, "rb") as fp:
+            heads = list(heads_of(fp))
+        with gzip.open(file, "rt") as fp:
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 2) == "かきく"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 0) == "あい\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, 1) == "abc\n"
+            assert getline(fp, heads, -1) == "かきく"
+
+
+if __name__ == "__main__":
+    _test()
 ```
 
 # `prep.py`
@@ -37,14 +191,14 @@ def flag_nan(df, cols):
     >>> df = pd.DataFrame(dict(a=[1.0, None, 9.0], b=[9, 8, 7]))
     >>> flag_nan(df, ["a"])
          a  b  a_nan
-    0  1.0  9  False
-    1  NaN  8   True
-    2  9.0  7  False
+    0  1.0  9      0
+    1  NaN  8      1
+    2  9.0  7      0
     """
     ret = df.copy(deep=False)
     seen = set(ret.columns)
     for col in cols:
-        set_uniquely(ret, f"{col}_nan", df[col].isna(), seen)
+        set_uniquely(ret, f"{col}_nan", df[col].isna().astype(int), seen)
     return ret
 
 
@@ -92,13 +246,13 @@ def one_hot(df, col_levels):
     >>> import pandas as pd
     >>> df = pd.DataFrame(dict(a=["a", None, "a", "a", "b", "b"], b=[1, 2, 2, 3, 3, 3]))
     >>> one_hot(df, [("a", ["a", "b"]), ("b", [2, 1])])
-         a_a    a_b    b_2    b_1
-    0   True  False  False   True
-    1  False  False   True  False
-    2   True  False   True  False
-    3   True  False  False  False
-    4  False   True  False  False
-    5  False   True  False  False
+       a_a  a_b  b_2  b_1
+    0    1    0    0    1
+    1    0    0    1    0
+    2    1    0    1    0
+    3    1    0    0    0
+    4    0    1    0    0
+    5    0    1    0    0
     """
     ret = df.copy(deep=False)
     seen = set(ret.columns)
@@ -106,7 +260,7 @@ def one_hot(df, col_levels):
         ser = ret[col]
         ret = ret.drop(col, axis="columns")
         for level in levels:
-            set_uniquely(ret, f"{col}_{level}", (ser == level).values, seen)
+            set_uniquely(ret, f"{col}_{level}", (ser == level).values.astype(int), seen)
     return ret
 
 
@@ -174,18 +328,18 @@ strip -R .note -R .comment a.out
 ./a.out
  ```
 
-# `Conf`
+# `ddict`
 
 ```py
-class Conf(object):
+class ddict(object):
     """
-    >>> conf = Conf()
+    >>> conf = ddict()
     >>> conf.z = 99
     >>> conf
-    Conf(z=99)
-    >>> conf = Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    ddict(z=99)
+    >>> conf = ddict(a=1, b=ddict(c=2, d=ddict(e=3)))
     >>> conf
-    Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    ddict(a=1, b=ddict(c=2, d=ddict(e=3)))
     >>> conf.a
     1
     >>> conf.b.c
@@ -193,32 +347,35 @@ class Conf(object):
     >>> conf.a = 99
     >>> conf.b.c = 88
     >>> conf
-    Conf(a=99, b=Conf(c=88, d=Conf(e=3)))
+    ddict(a=99, b=ddict(c=88, d=ddict(e=3)))
     >>> conf.a = 1
     >>> conf.b.c = 2
     >>> conf._update(dict(p=9, r=10))
-    Conf(a=1, b=Conf(c=2, d=Conf(e=3)), p=9, r=10)
+    ddict(a=1, b=ddict(c=2, d=ddict(e=3)), p=9, r=10)
     >>> conf._to_dict_rec()
     {'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10}
     >>> conf._of_dict_rec({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}})
-    Conf(a=1, b=Conf(c=2, d=Conf(e=3)))
+    ddict(a=1, b=ddict(c=2, d=ddict(e=3)))
     >>> conf._to_dict()
-    {'a': 1, 'b': Conf(c=2, d=Conf(e=3))}
+    {'a': 1, 'b': ddict(c=2, d=ddict(e=3))}
     >>> conf._of_dict({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}, 'p': 9, 'r': 10})
-    Conf(a=1, b={'c': 2, 'd': {'e': 3}}, p=9, r=10)
+    ddict(a=1, b={'c': 2, 'd': {'e': 3}}, p=9, r=10)
     """
 
     def __init__(self, **kwargs):
+        super().__setattr__("_data", dict())
         self._update(kwargs)
 
     def __setattr__(self, k, v):
-        self.__dict__[k] = v
+        if k in self.__dict__:
+            raise ValueError(f"Tried to overwrite {k} of {self} by {v}")
+        self._data[k] = v
 
     def __getattr__(self, k):
-        return self.__dict__[k]
+        return self._data[k]
 
     def __repr__(self):
-        args = ", ".join(f"{k}={v}" for k, v in self.__dict__.items())
+        args = ", ".join(f"{k}={repr(v)}" for k, v in self._data.items())
         return f"{self.__class__.__name__}({args})"
 
     def _update(self, d):
@@ -227,17 +384,17 @@ class Conf(object):
         return self
 
     def _to_dict(self):
-        return self.__dict__.copy()
+        return self._data.copy()
 
     def _to_dict_rec(self):
-        return {k: v._to_dict_rec() if isinstance(v, self.__class__) else v for k, v in self.__dict__.items()}
+        return {k: v._to_dict_rec() if isinstance(v, self.__class__) else v for k, v in self._data.items()}
 
     def _of_dict(self, d):
-        self.__dict__.clear()
+        self._data.clear()
         return self._update(d)
 
     def _of_dict_rec(self, d):
-        self.__dict__.clear()
+        self._data.clear()
         for k, v in d.items():
             setattr(self, k, self.__class__()._of_dict_rec(v) if isinstance(v, dict) else v)
         return self
@@ -1715,7 +1872,6 @@ nodetree
 norasi-c90
 notes2bib
 notex-bst
-noto
 numprint
 oberdiek
 odsfile
@@ -1791,7 +1947,6 @@ tex-gyre
 tex-gyre-math
 tex-ini-files
 tex4ht
-texconfig
 texdoc
 texlive-common
 texlive-docindex
