@@ -1,3 +1,11 @@
+# `git stash push`
+
+https://stackoverflow.com/a/5506483
+
+```
+git stash push <path>
+```
+
 # `prep.py`
 
 ```py
