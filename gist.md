@@ -1,3 +1,8 @@
+```
+# https://stackoverflow.com/a/5506483
+git stash push <path>
+```
+
 ```bash
 python3 -m doctest -v lib.py
 ```
