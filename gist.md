@@ -43,14 +43,12 @@ class Task(object):
     def execute(self):
         assert self.state != "done", self
         self.state = "running"
-        while True:
-            try:
-                next(self.gen)
-            except StopIteration:
-                break
-            self.schedule()
+        try:
+            next(self.gen)
+        except StopIteration:
+            self.state = "done"
             return
-        self.state = "done"
+        self.schedule()
 
 
 def schedule(fn):
