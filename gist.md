@@ -10,6 +10,90 @@ sleep 3600 && osascript -e 'tell application "Finder" to sleep'
 ssh -o ProxyCommand='ssh -W %h:%p who@gate.com' -p 22 me@target.com
 ```
 
+# task.py
+
+```python3
+import queue
+import threading
+
+
+work_queue = queue.Queue()
+
+
+class Task(object):
+
+    def __init__(self, gen):
+        super().__init__()
+        self.state = "runnable"
+        self.gen = gen
+
+    def __repr__(self):
+        return f"{self.__class__} gen={self.gen} state={self.state}"
+
+    def schedule(self):
+        if self.state in ("runnable", "running"):
+            work_queue.put(self)
+        return self
+
+    def execute(self):
+        assert self.state != "done", self
+        self.state = "running"
+        while True:
+            try:
+                next(self.gen)
+            except StopIteration:
+                break
+            self.schedule()
+            return
+        self.state = "done"
+
+
+def schedule(fn):
+    return Task(fn()).schedule()
+
+
+def wait():
+    while True:
+        try:
+            t = work_queue.get(block=False)
+        except queue.Empty:
+            return
+        t.execute()
+
+
+def _consume():
+    while True:
+        work_queue.get(block=True).execute()
+
+
+work_queue_thread = threading.Thread(target=_consume, daemon=True).start()
+```
+
+```python3
+import time
+
+import task
+
+
+@task.schedule
+def f():
+    print(1)
+    time.sleep(2)
+    yield
+    print(2)
+
+
+@task.schedule
+def g():
+    print(3)
+    time.sleep(2)
+    yield
+    print(4)
+
+
+task.wait()
+```
+
 # transducers.hs
 
 ```haskell
