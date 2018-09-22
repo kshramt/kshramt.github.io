@@ -1,3 +1,13 @@
+```
+sshfs -o auto_cache -o reconnect me@there:/ ~/disk/there
+```
+
+```
+%load_ext autoreload
+%autoreload 1
+%aimport lib
+```
+
 # task.py
 
 ```python3
