@@ -1,4 +1,8 @@
 ```
+julia -e 'println(join(map(_->rand("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"), 1:20), ''))'
+```
+
+```
 sshfs -o auto_cache -o reconnect me@there:/ ~/disk/there
 ```
 
