@@ -1,4 +1,8 @@
 ```
+conda install -c defaults -c conda-forge <pkg>
+```
+
+```
 julia -e 'println(join(map(_->rand("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"), 1:20), ''))'
 ```
 
