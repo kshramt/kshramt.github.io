@@ -1,4 +1,10 @@
 ```
+ssh -i ~/.ssh/google_compute_engine -N -L localhost:8888:localhost:8888 me@"$(gcloud compute instances list --filter name=instance-1 --format="value(networkInterfaces[].accessConfigs[0].natIP)")"
+
+gcloud compute --project "gcp-project" ssh --zone "us-central1-a" "instance-1" -- -N -L localhost:8888:localhost:8888
+```
+
+```
 conda install -c defaults -c conda-forge <pkg>
 ```
 
