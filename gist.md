@@ -1,3 +1,26 @@
+```js
+const updateIm = (o, path, e) => {
+  if (path.length) {
+    const k = path[0];
+    const t = typeof k;
+    path = path.slice(1, path.length);
+    if (t === "number") {
+      o = o.slice();
+    } else if (t === "string") {
+      o = {
+        ...o,
+      };
+    } else {
+      throw "Unsupported type " + t;
+    }
+    o[k] = updateIm(o[k], path, e);
+    return o;
+  } else {
+    return e;
+  }
+};
+```
+
 ```
 ssh -i ~/.ssh/google_compute_engine -N -L localhost:8888:localhost:8888 me@"$(gcloud compute instances list --filter name=instance-1 --format="value(networkInterfaces[].accessConfigs[0].natIP)")"
 
