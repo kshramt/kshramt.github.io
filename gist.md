@@ -1,3 +1,12 @@
+```
+round(
+    datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%fZ")
+    .replace(tzinfo=datetime.timezone.utc)
+    .timestamp()
+    * 1000
+)
+```
+
 ```js
 const updateIm = (o, path, e) => {
   if (path.length) {
