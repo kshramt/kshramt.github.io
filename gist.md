@@ -1,3 +1,30 @@
+# `~/.gitconfig`
+
+```
+[alias]
+	co = checkout
+	ci = commit
+	st = status
+	br = branch
+	nffm = merge --no-ff
+	wdiff = diff --word-diff -w
+[core]
+	quotepath = false
+```
+
+```
+python3 -m venv venv
+venv/bin/pip install jupyterlab scikit-learn lightgbm torch matplotlib black python-language-server pandas tqdm jupyterlab_code_formatter ipywidgets tensorflow
+venv/bin/jupyter nbextension enable --py widgetsnbextension
+venv/bin/jupyter labextension install @jupyterlab/toc
+venv/bin/jupyter labextension install @ryantam626/jupyterlab_code_formatter
+jupyter serverextension enable --py jupyterlab_code_formatter
+```
+
+```
+cat /path | sed -e 's/ー *。/。/g' -e 's/ヽ//g' -e 's/ー *！//g' -e 's/ー *？/？/g' | say -r290 -o path.m4a
+```
+
 ```
 round(
     datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -34,6 +61,51 @@ const updateIm = (o, path, e) => {
 ssh -i ~/.ssh/google_compute_engine -N -L localhost:8888:localhost:8888 me@"$(gcloud compute instances list --filter name=instance-1 --format="value(networkInterfaces[].accessConfigs[0].natIP)")"
 
 gcloud compute --project "gcp-project" ssh --zone "us-central1-a" "instance-1" -- -N -L localhost:8888:localhost:8888
+```
+
+```
+#!/usr/bin/python3
+
+import contextlib
+import copy
+import itertools
+import logging
+import os
+import queue
+import sys
+
+
+__version__ = "0.1.0"
+logger = logging.getLogger(__name__)
+
+
+
+class Resource:
+    """
+    with resources.get() as data:
+        work(data)
+    """
+
+    def __init__(self, data, queue):
+        self.data = data
+        self.queue = queue
+
+    def __enter__(self):
+        return self.data
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.queue.put(self.data)
+
+
+def make_resource_pool(resource_of, n_resources, n_per_resource=1):
+    assert n_resources >= 0, n_resources
+    assert n_per_resource >= 0, n_per_resource
+    data_list = [resource_of(i, n_resources) for i in range(n_resources)]
+    data_list = itertools.chain(*(copy.deepcopy(data_list) for _ in range(n_per_resource)))
+    queue = queue.Queue(maxsize=len(data_list))
+    for data in data_list:
+        queue.put(Resource(data, queue))
+    return queue
 ```
 
 ```
