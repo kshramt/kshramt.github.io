@@ -18,7 +18,7 @@ venv/bin/pip install jupyterlab scikit-learn lightgbm torch matplotlib black pyt
 venv/bin/jupyter nbextension enable --py widgetsnbextension
 venv/bin/jupyter labextension install @jupyterlab/toc
 venv/bin/jupyter labextension install @ryantam626/jupyterlab_code_formatter
-jupyter serverextension enable --py jupyterlab_code_formatter
+venv/bin/jupyter serverextension enable --py jupyterlab_code_formatter
 ```
 
 ```
