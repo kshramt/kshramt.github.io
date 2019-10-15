@@ -1,3 +1,108 @@
+```
+import os
+
+
+class AppendDbV1:
+    def __init__(self, path):
+        mkdir(path)
+        self.path = path
+        self.fp_index = open(jp(path, "index.i64"), "a+b")
+        self.fp_data = open(jp(path, "data.txt"), "a+b")
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({repr(self.path)})"
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.fp_index.close()
+        self.fp_data.close()
+
+    def __len__(self):
+        s = os.fstat(self.fp_index.fileno()).st_size
+        assert s % 64 == 0, (self.path, s)
+        return s // 64
+
+    def __getitem__(self, i: int):
+        i = range(len(self))[i]
+        ib1, ib2 = self._ib1_of(i), self._ib2_of(i)
+        self.fp_data.seek(ib1)
+        return self.fp_data.read(ib2 - ib1).decode("utf-8")
+
+    def append(self, t: str):
+        b = t.encode("utf-8")
+        l = len(self)
+        ib1 = 0 if l == 0 else self._ib_of(l - 1)
+        self.fp_data.seek(ib1)
+        dib = self.fp_data.write(b)
+        try:
+            self.fp_index.write(self._bytes(ib1 + dib))
+        except OSError:
+            self.fp_index.truncate(l * 64)
+            raise
+        self.flush()
+
+    def flush(self):
+        self.fp_index.flush()
+        self.fp_data.flush()
+
+    def _ib1_of(self, i):
+        return 0 if i == 0 else self._ib_of(i - 1)
+
+    def _ib2_of(self, i):
+        return self._ib_of(i)
+
+    def _ib_of(self, i):
+        self.fp_index.seek(i * 64)
+        return self._int(self.fp_index.read(64))
+
+    @staticmethod
+    def _bytes(i: int):
+        return i.to_bytes(64, "little", signed=False)
+
+    @staticmethod
+    def _int(b: bytes):
+        return int.from_bytes(b, "little", signed=False)
+
+
+def mkdir(path):
+    os.makedirs(path, exist_ok=True)
+
+
+def jp(path, *more):
+    return os.path.normpath(os.path.sep.join((path, os.path.sep.join(more))))
+```
+
+```
+import argparse
+
+
+def namespacify(x):
+    if isinstance(x, dict):
+        return argparse.Namespace(**{k, namespacify(v) for k, v in x.items()})
+    elif isinstance(x, list):
+        return [namespacify(v)) for v in x]
+    elif isinstance(x, tuple):
+        return tuple(namespacify(v) for v in x)
+    else:
+        return x
+
+
+def dictify(x):
+    if isinstance(x, argparse.Namespace):
+        return dictify(vars(x))
+    elif isinstance(x, dict):
+        return {k: dictify(v) for k, v in x.items()}
+    elif isinstance(x, list):
+        return [dictify(v)) for v in x]
+    elif isinstance(x, tuple):
+        return tuple(dictify(v) for v in x)
+    else:
+        return x
+```
+
+
 # `~/.gitconfig`
 
 ```
