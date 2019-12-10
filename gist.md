@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
         @dataclasses.dataclass
         class c2:
-            x: typing.Literal["xx"]
+            x: typing.Literal["xx", "zz"]
             y: typing.Dict[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
