@@ -16,6 +16,8 @@ if _PY37:
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             fields = {f.name: f.type for f in dataclasses.fields(cls)}
+            if set(fields.keys()) != set(x.keys()):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             return cls(**{k: dataclass_of(fields[k], v) for k, v in x.items()})
         elif type(cls) == type:
             if not isinstance(x, cls):
@@ -49,6 +51,8 @@ else:
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             fields = {f.name: f.type for f in dataclasses.fields(cls)}
+            if set(fields.keys()) != set(x.keys()):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             return cls(**{k: dataclass_of(fields[k], v) for k, v in x.items()})
         elif type(cls) == type:
             if not isinstance(x, cls):
