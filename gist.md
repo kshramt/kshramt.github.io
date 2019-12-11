@@ -1,5 +1,6 @@
 ```
 # dataclass_fromdict
+# GPL v3
 import dataclasses
 import sys
 import typing
@@ -20,9 +21,9 @@ if _PY37:
             if not isinstance(x, cls):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             return x
-        elif isinstance(cls, str):
-            if x != cls:
-                raise TypeError(f"{x} is not compatible with Literal[{cls}]")
+        elif isinstance(cls, tuple):
+            if x not in cls:
+                raise TypeError(f"{x} is not compatible with {cls}")
             return x
         elif cls.__origin__ == list:
             vcls = cls.__args__[0]
@@ -84,12 +85,12 @@ if __name__ == "__main__":
 
         @dataclasses.dataclass
         class c3:
-            x: "yy"
+            x: ("yy",)
             y: typing.Dict[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
         class c2:
-            x: "xx"
+            x: ("xx",)
             y: typing.Dict[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
