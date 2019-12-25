@@ -30,9 +30,17 @@ if _PY37:
         elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
             vcls = cls.__args__[0]
             return [dataclass_of(vcls, v) for v in x]
-        elif cls.__origin__ == dict:
+        elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
             kcls, vcls = cls.__args__
             return {dataclass_of(kcls, k): dataclass_of(vcls, v) for k, v in x.items()}
+        elif cls.__origin__ == set:
+            vcls = cls.__args__[0]
+            return {dataclass_of(vcls, v) for v in x}
+        elif cls.__origin__ == tuple:
+            vclss = cls.__args__
+            if len(vclss) != len(x):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return tuple(dataclass_of(vcls, v) for vcls, v in zip(vclss, x))
         elif cls.__origin__ == typing.Union:
             for ucls in cls.__args__:
                 try:
@@ -65,9 +73,17 @@ else:
         elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
             vcls = cls.__args__[0]
             return [dataclass_of(vcls, v) for v in x]
-        elif cls.__origin__ == dict:
+        elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
             kcls, vcls = cls.__args__
             return {dataclass_of(kcls, k): dataclass_of(vcls, v) for k, v in x.items()}
+        elif cls.__origin__ == set:
+            vcls = cls.__args__[0]
+            return {dataclass_of(vcls, v) for v in x}
+        elif cls.__origin__ == tuple:
+            vclss = cls.__args__
+            if len(vclss) != len(x):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return tuple(dataclass_of(vcls, v) for vcls, v in zip(vclss, x))
         elif cls.__origin__ == typing.Union:
             for ucls in cls.__args__:
                 try:
@@ -90,7 +106,7 @@ if __name__ == "__main__":
         @dataclasses.dataclass
         class c3:
             x: ("yy",)
-            y: typing.Dict[str, typing.Optional[c4]]
+            y: typing.Mapping[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
         class c2:
@@ -102,11 +118,15 @@ if __name__ == "__main__":
             x: typing.List[typing.Union[c2, c3]]
             y: c4
             z: typing.Sequence[int]
+            a: typing.Set[str]
+            b: typing.Tuple[int, str, float]
 
         x = c1(
             x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
             y=c4(x=1, y=1.3),
             z=[1],
+            a=set(["a"]),
+            b=(1, "two", 3.4),
         )
         assert x == dataclass_of(c1, dataclasses.asdict(x))
     else:
@@ -119,7 +139,7 @@ if __name__ == "__main__":
         @dataclasses.dataclass
         class c3:
             x: typing.Literal["yy"]
-            y: typing.Dict[str, typing.Optional[c4]]
+            y: typing.Mapping[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
         class c2:
@@ -131,10 +151,14 @@ if __name__ == "__main__":
             x: typing.List[typing.Union[c2, c3]]
             y: c4
             z: typing.Sequence[int]
+            a: typing.Set[str]
+            b: typing.Tuple[int, str, float]
 
         x = c1(
             x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
             y=c4(x=1, y=1.3),
             z=[1],
+            a=set(["a"]),
+            b=(1, "two", 3.4),
         )
         assert x == dataclass_of(c1, dataclasses.asdict(x))
