@@ -3,6 +3,9 @@
 import dataclasses
 import typing
 
+import MeCab
+
+
 class MecabV1:
     def __init__(self, args="-d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"):
         self.mecab = MeCab.Tagger(args)
@@ -40,7 +43,6 @@ class MecabTokenV1:
     features: typing.List[str]
     span: typing.Tuple[int, int]
 
-import MeCab
 mecab = MecabV1("")
 for x in mecab("この先生きのこるにはどうすれば良いのか？"):
     print(x)
