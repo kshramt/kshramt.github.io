@@ -1,4 +1,52 @@
 ```
+# pip install mecab-python3
+import dataclasses
+import typing
+
+class MecabV1:
+    def __init__(self, args="-d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"):
+        self.mecab = MeCab.Tagger(args)
+
+    def __call__(self, t: str):
+        return list(self._call(t))
+
+    def tokenize(self, t: str):
+        node = self.mecab.parseToNode(t)
+        while node:
+            yield node.surface, node.feature.split(",")
+            node = node.next
+
+    def _call(self, t: str):
+        n = len(t)
+        i1 = 0
+        for surface, features in self.tokenize(t):
+            if features[0] == "BOS/EOS":
+                continue
+            l = len(surface)
+            while True:
+                if i1 >= n:
+                    raise ValueError(f"Failed to align {surface} for {t}")
+                if surface == t[i1 : i1 + l]:
+                    break
+                i1 += 1
+            i2 = i1 + l
+            yield MecabTokenV1(surface, features, (i1, i2))
+            i1 = i2
+
+
+@dataclasses.dataclass
+class MecabTokenV1:
+    surface: str
+    features: typing.List[str]
+    span: typing.Tuple[int, int]
+
+import MeCab
+mecab = MecabV1("")
+for x in mecab("この先生きのこるにはどうすれば良いのか？"):
+    print(x)
+```
+
+```
 import os
 
 
