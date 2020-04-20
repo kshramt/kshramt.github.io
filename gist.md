@@ -1,4 +1,8 @@
 ```
+gs -dPrinted=false -sDEVICE=pdfwrite -o cropped.pdf -c '[/CropBox [0 0 621 792] /PAGES pdfmark' -f input.pdf
+```
+
+```
 # pip install mecab-python3
 import dataclasses
 import typing
