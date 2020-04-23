@@ -1,4 +1,28 @@
 ```
+def trie_pat_of_v1(xss):
+    xss = sorted(xss, reverse=True)
+    root = dict()
+    for xs in xss:
+        node = root
+        for x in xs:
+            if x not in node:
+                node[x] = dict()
+            node = node[x]
+        node[""] = dict()
+
+    def impl(node):
+        if len(node) <= 0:
+            return ""
+        elif len(node) == 1:
+            k = next(iter(node))
+            return re.escape(k) + impl(node[k])
+        else:
+            return "(?:" + "|".join((re.escape(k) + impl(node[k])) for k in node) + ")"
+
+    return impl(root)
+```
+
+```
 gs -dPrinted=false -sDEVICE=pdfwrite -o cropped.pdf -c '[/CropBox [0 0 621 792] /PAGES pdfmark' -f input.pdf
 ```
 
