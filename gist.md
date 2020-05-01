@@ -1,4 +1,43 @@
 ```
+import re
+
+
+def trie_pat_of_v2(xss, esc=re.escape):
+    assert xss, xss
+    xss = sorted(xss, reverse=True)
+    ns = [len(xs) for xs in xss]
+
+    def update_branches(branches, x_prev, j, n, ii1, ii2):
+        if x_prev is not None:
+            branch = esc(x_prev)
+            if j < n:
+                branch += impl(ii1, ii2, j + 1)
+            branches.append(branch)
+
+    def impl(i1, i2, j):
+        assert 0 < i2 - i1
+        branches = []
+        ii1 = i1
+        x_prev = None
+        n_prev = None
+        for i in range(i1, i2):
+            xs = xss[i]
+            n = ns[i]
+            x = xs[j] if j < n else ""
+            if x != x_prev:
+                ii2 = i
+                update_branches(branches, x_prev, j, n_prev, ii1, ii2)
+                ii1 = ii2
+                x_prev = x
+            n_prev = n
+        ii2 = i2
+        update_branches(branches, x_prev, j, n_prev, ii1, ii2)
+        assert branches, branches
+        return branches[0] if len(branches) == 1 else "(?:" + "|".join(branches) + ")"
+
+    return impl(0, len(xss), 0)
+
+
 def trie_pat_of_v1(xss):
     xss = sorted(xss, reverse=True)
     root = dict()
@@ -20,6 +59,24 @@ def trie_pat_of_v1(xss):
             return "(?:" + "|".join((re.escape(k) + impl(node[k])) for k in node) + ")"
 
     return impl(root)
+
+
+if __name__ == "__main__":
+    import functools
+    import random
+    import string
+
+    def gen_str(rng: random.Random, n1, n2):
+        return "".join(rng.choice(string.printable) for _ in range(rng.randint(n1, n2)))
+    def gen_list(rng, n1, n2, gen_element):
+        return [gen_element() for _ in range(rng.randint(n1, n2))]
+    rng = random.Random(42)
+    gen_element = functools.partial(gen_str, rng, 0, 20)
+    for _ in range(1000):
+        xss = gen_list(rng, 1, 20, gen_element)
+        pat1 = trie_pat_of_v1(xss)
+        pat2 = trie_pat_of_v2(xss)
+        assert pat1 == pat2, pat1 + "\n" + pat2
 ```
 
 ```
