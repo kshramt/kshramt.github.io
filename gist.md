@@ -1,4 +1,16 @@
 ```
+import contextlib
+import time
+
+@contextlib.contextmanager
+def timing(fn):
+    t1 = time.monotonic()
+    yield
+    t2 = time.monotonic()
+    fn(t2 - t1)
+```
+
+```
 import re
 
 
