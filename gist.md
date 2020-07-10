@@ -42,14 +42,19 @@ def mkdir(path):
 
 ```
 import contextlib
+import  logging
 import time
 
+logger = logging.getLogger()
+
 @contextlib.contextmanager
-def timing(fn):
+def timing(msg, fn=None):
+    if fn is None:
+        fn = logger.info
     t1 = time.monotonic()
     yield
     t2 = time.monotonic()
-    fn(t2 - t1)
+    fn(msg, t2 - t1)
 ```
 
 ```
