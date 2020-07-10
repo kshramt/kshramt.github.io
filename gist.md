@@ -1,5 +1,6 @@
 ```
 import gzip
+import json
 import os
 import functools
 import pickle
@@ -15,8 +16,21 @@ def load_pickle(path, open=open):
     with open(path, "rb") as fp:
         return pickle.load(fp)
 
+
+def dump_json(path, x, open=open, **kwargs):
+    mkdir(dirname(path))
+    with open(path, "wt") as fp:
+        return json.dump(x, fp, **kwargs)
+
+
+def load_json(path, open=open):
+    with open(path, "rt") as fp:
+        return json.load(fp)
+
 dump_pickle_gz = functools.partial(dump_pickle, open=gzip.open)
 load_pickle_gz = functools.partial(load_pickle, open=gzip.open)
+dump_json_gz = functools.partial(dump_json, open=gzip.open)
+load_json_gz = functools.partial(load_json, open=gzip.open)
 
 
 def dirname(path):
