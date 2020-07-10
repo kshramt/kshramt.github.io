@@ -1,4 +1,28 @@
 ```
+import gzip
+import os
+import pickle
+
+
+def dump_pickle_gz(path, x):
+    mkdir(dirname(path))
+    with gzip.open(path, "wb") as fp:
+        return pickle.dump(x, fp)
+
+
+def load_pickle_gz(path):
+    with gzip.open(path) as fp:
+        return pickle.load(fp)
+
+
+def dirname(path):
+    return os.path.dirname(path) or os.path.curdir
+
+def mkdir(path):
+    return os.makedirs(path, exist_ok=True)
+```
+
+```
 import contextlib
 import time
 
