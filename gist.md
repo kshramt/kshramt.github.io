@@ -1,4 +1,32 @@
 ```
+import time
+import random
+import multiprocessing
+import numpy as np
+
+
+def seed(q, delta):
+    seed = q.get()
+    q.put(seed + delta)
+    random.seed(seed)
+    np.random.seed(seed)
+    print(multiprocessing.current_process(), seed, random.random(), np.random.random())
+
+
+def f(x):
+    time.sleep(1)
+    print(multiprocessing.current_process(), x, random.random(), np.random.random())
+
+
+if __name__ == "__main__":
+    jobs = 4
+    q = multiprocessing.Queue(1)
+    q.put(1)
+    with multiprocessing.Pool(jobs, seed, (q, 1)) as pool:
+        pool.map(f, range(10))
+```
+
+```
 import gzip
 import json
 import os
