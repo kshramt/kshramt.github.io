@@ -22,7 +22,8 @@ if __name__ == "__main__":
     jobs = 4
     q = multiprocessing.Queue(1)
     q.put(1)
-    with multiprocessing.Pool(jobs, seed, (q, 1)) as pool:
+    ctx = multiprocessing.get_context("spawn")
+    with ctx.Pool(jobs, seed, (q, 1)) as pool:
         pool.map(f, range(10))
 ```
 
