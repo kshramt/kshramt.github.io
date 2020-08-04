@@ -1,3 +1,7 @@
+```bash
+docker run --init --security-opt seccomp=unconfined --rm -it -p 8888:8888 -v"$(pwd)":/work/h IMAGE:"$(date +'%y%m%d')" nice -n19 jupyter lab --LabApp.token='' --no-browser --port=8888 --allow-root --ip='*'
+```
+
 ```
 import ipdb
 
