@@ -1,3 +1,75 @@
+```python3
+import tensorflow as tf
+import numpy as np
+
+
+ntrain = 100
+xtrain = np.random.randn(ntrain, 2)
+ytrain = np.random.randn(ntrain, 1)
+
+nval = 50
+xval = np.random.randn(nval, 2)
+yval = np.random.randn(nval, 1)
+
+dtrain = tf.data.Dataset.from_tensor_slices((xtrain, ytrain)).batch(10).repeat()
+dval = tf.data.Dataset.from_tensor_slices((xval, yval)).batch(10).repeat()
+
+
+class LWLD(tf.keras.optimizers.schedules.LearningRateSchedule):
+    def __init__(
+        self,
+        lr_init: float,
+        lr_high: float,
+        lr_last: float,
+        n_warmup: int,
+        n_decay: int,
+    ):
+        assert 0 < n_warmup < n_decay, (n_warmup, n_decay)
+        assert 0 < lr_init, lr_init
+        assert 0 < lr_high, lr_high
+        assert 0 < lr_last, lr_last
+        super().__init__()
+        self.lr_init = lr_init
+        self.lr_high = lr_high
+        self.lr_last = lr_last
+        self.n_warmup = n_warmup
+        self.n_decay = n_decay
+
+    @tf.function  # Suppress "Tensorflow error: Using a `tf.Tensor` as a Python `bool` is not allowed" error.
+    def __call__(self, step):
+        step = tf.cast(step, tf.float32)
+        if step <= self.n_warmup:
+            ret = self.lr_init + (self.lr_high - self.lr_init) * step / self.n_warmup
+        elif step <= self.n_decay:
+            ret = self.lr_high + (self.lr_last - self.lr_high) * (
+                step - self.n_warmup
+            ) / (self.n_decay - self.n_warmup)
+        else:
+            ret = self.lr_last
+        tf.print("step", step, ret)
+        return ret
+
+
+model = tf.keras.Sequential([tf.keras.layers.Dense(10), tf.keras.layers.Dense(1)])
+model.layers[0].trainable = False
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=LWLD(1e-5, 1e-4, 1e-5, 3, 20)),
+    loss=tf.keras.losses.MeanSquaredError(),
+)
+model.fit(dtrain, epochs=2, steps_per_epoch=3)
+model.layers[0].trainable = True
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=LWLD(1e-5, 1e-4, 1e-5, 3, 20)),
+    loss=tf.keras.losses.MeanSquaredError(),
+)
+model.fit(
+    dtrain,
+    epochs=13,
+    steps_per_epoch=3,
+    initial_epoch=10,
+)
+```
+
 ```bash
 # Dockerfile
 # chmod a+rwx /home
