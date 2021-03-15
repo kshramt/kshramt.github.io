@@ -74,7 +74,18 @@ model.fit(
 # Dockerfile
 # chmod a+rwx /home
 
-docker run --init --security-opt seccomp=unconfined --rm -it -p 8888:8888 -v /etc/passwd:/etc/passwd -v /data:/data -w"$(pwd)" -u"$(id -u):$(id -g)" $(for g in $(id -G) ; do echo --group-add "$g" ; done) IMAGE:"$(date +'%y%m%d')" nice -n19 jupyter lab --LabApp.token='' --no-browser --port=8888 --allow-root --ip='*'
+docker run \
+--init \
+--security-opt seccomp=unconfined \
+--rm \
+-p 8888:8888 \
+--mount type=bind,source=/etc/passwd,target=/etc/passwd \
+--mount type=bind,source=/etc/group,target=/etc/group \
+--mount type=bind,source=/data,target=/data \
+-w"$(pwd)" \
+-u"$(id -u)" \
+IMAGE:"$(date +'%y%m%d')" \
+nice -n19 jupyter lab --LabApp.token='' --no-browser --port=8888 --ip='*'
 
 ```
 
