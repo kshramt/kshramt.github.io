@@ -480,7 +480,7 @@ def dictify(x):
 
 ```
 python3 -m venv venv
-venv/bin/pip install jupyterlab scikit-learn lightgbm torch matplotlib black python-language-server pandas tqdm jupyterlab_code_formatter ipywidgets tensorflow
+venv/bin/pip install jupyterlab scikit-learn lightgbm torch matplotlib black pip install mypy-ls pyls_isort python-lsp-server pandas tqdm jupyterlab_code_formatter ipywidgets tensorflow
 venv/bin/jupyter nbextension enable --py widgetsnbextension
 venv/bin/jupyter labextension install @jupyterlab/toc
 venv/bin/jupyter labextension install @ryantam626/jupyterlab_code_formatter
