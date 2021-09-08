@@ -1,4 +1,40 @@
 ```python3
+import google.cloud.storage
+
+
+def open2_of(gs=None):
+    def open_of(uri):
+        if gs and uri.startswith("gs://"):
+            return gs
+        else:
+            return open
+
+    def open2(uri: str, mode="r"):
+        return open_of(uri)(uri, mode=mode)
+
+    return open2
+
+
+def gs_open_of(client: google.cloud.storage.Client):
+    def gs_open(uri: str, mode: str = "r"):
+        blob = google.cloud.storage.Blob.from_string(uri, client)
+        return blob.open(mode=mode)
+
+    return gs_open
+
+
+open2 = open2_of(gs=gs_open_of(client=google.cloud.storage.Client()))
+```
+
+```python3
+import numpy as np
+import torch
+
+a = np.frombuffer(b"abc", np.uint8)
+t = torch.as_tensor(a)
+```
+
+```python3
 import tensorflow as tf
 import numpy as np
 
