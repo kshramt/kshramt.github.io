@@ -1,3 +1,51 @@
+```javascript
+const vcache = {};
+const pcache = {};
+const cached = (f) => {
+  // const vcache = {};
+  // const pcache = {};
+  return async (x) => {
+    console.log("a", x);
+    if (x in vcache) {
+      console.log("b", x, vcache, pcache);
+      return vcache[x];
+    }
+    if (x in pcache) {
+      console.log("c", x, vcache, pcache);
+      return await pcache[x];
+    }
+    const p = (async () => {
+      console.log("d", x, vcache, pcache);
+      const v = await f(x);
+      vcache[x] = v;
+      return v;
+    })();
+    pcache[x] = p;
+    return await p;
+  };
+};
+
+let G = 0;
+
+let slow = async (s) => {
+  console.log("slow", s);
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  G += 1;
+  console.log("settimeout", G);
+  return `${s}/${G}`;
+};
+
+const cslow = cached(slow);
+
+cslow("p").then((v) => console.log("p1", v, vcache, pcache));
+cslow("p").then((v) => console.log("p2", v, vcache, pcache));
+cslow("q").then((v) => console.log("q1", v, vcache, pcache));
+cslow("p").then((v) => {
+  console.log("p3", v, vcache, pcache);
+  cslow("p").then((v) => console.log("p4", v, vcache, pcache));
+});
+```
+
 ```python3
 import google.cloud.storage
 
