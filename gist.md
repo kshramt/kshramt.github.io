@@ -16,9 +16,14 @@ const cached = (f) => {
     }
     const p = (async () => {
       console.log("d", x, vcache, pcache);
-      const v = await f(x);
-      vcache[x] = v;
-      return v;
+      try {
+        const v = await f(x);
+        vcache[x] = v;
+        return v;
+      } catch (e) {
+        delete pcache[x];
+        throw e;
+      }
     })();
     pcache[x] = p;
     return await p;
