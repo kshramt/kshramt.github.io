@@ -1,38 +1,29 @@
 ```javascript
-const vcache = {};
-const pcache = {};
+const cache = {};
 const cached = (f) => {
-  // const vcache = {};
-  // const pcache = {};
-  return async (x) => {
+  // const cache = {};
+  return async (x, t) => {
     console.log("a", x);
-    if (x in vcache) {
-      console.log("b", x, vcache, pcache);
-      return vcache[x];
+    if (!(x in cache)) {
+      cache[x] = (async () => {
+        console.log("d", x, cache);
+        try {
+          return f(x, t);
+        } catch (e) {
+          delete cache[x];
+          throw e;
+        }
+      })();
     }
-    if (x in pcache) {
-      console.log("c", x, vcache, pcache);
-      return pcache[x];
-    }
-    const p = (async () => {
-      console.log("d", x, vcache, pcache);
-      try {
-        const v = await f(x);
-        return vcache[x] = v;
-      } catch (e) {
-        delete pcache[x];
-        throw e;
-      }
-    })();
-    return pcache[x] = p;
+    return cache[x];
   };
 };
 
 let G = 0;
 
-let slow = async (s) => {
+let slow = async (s, t) => {
   console.log("slow", s);
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, t));
   G += 1;
   console.log("settimeout", G);
   return `${s}/${G}`;
@@ -40,12 +31,12 @@ let slow = async (s) => {
 
 const cslow = cached(slow);
 
-cslow("p").then((v) => console.log("p1", v, vcache, pcache));
-cslow("p").then((v) => console.log("p2", v, vcache, pcache));
-cslow("q").then((v) => console.log("q1", v, vcache, pcache));
-cslow("p").then((v) => {
-  console.log("p3", v, vcache, pcache);
-  cslow("p").then((v) => console.log("p4", v, vcache, pcache));
+cslow("p", 2000).then((v) => console.log("p1", v, cache));
+cslow("p", 2000).then((v) => console.log("p2", v, cache));
+cslow("q", 100).then((v) => console.log("q1", v, cache));
+cslow("p", 2000).then((v) => {
+  console.log("p3", v, cache);
+  cslow("p", 2000).then((v) => console.log("p4", v, cache));
 });
 ```
 
