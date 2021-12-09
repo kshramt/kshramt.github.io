@@ -12,21 +12,19 @@ const cached = (f) => {
     }
     if (x in pcache) {
       console.log("c", x, vcache, pcache);
-      return await pcache[x];
+      return pcache[x];
     }
     const p = (async () => {
       console.log("d", x, vcache, pcache);
       try {
         const v = await f(x);
-        vcache[x] = v;
-        return v;
+        return vcache[x] = v;
       } catch (e) {
         delete pcache[x];
         throw e;
       }
     })();
-    pcache[x] = p;
-    return await p;
+    return pcache[x] = p;
   };
 };
 
