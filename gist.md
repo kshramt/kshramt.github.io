@@ -163,11 +163,11 @@ docker run \
 --security-opt seccomp=unconfined \
 --rm \
 -p 8888:8888 \
---mount type=bind,source=/etc/passwd,target=/etc/passwd \
---mount type=bind,source=/etc/group,target=/etc/group \
+--mount type=bind,source=/etc/passwd,target=/etc/passwd,readonly \
+--mount type=bind,source=/etc/group,target=/etc/group,readonly \
 --mount type=bind,source=/data,target=/data \
 -w"$(pwd)" \
--u"$(id -u)" \
+-u"$(id -u):$(id -g)" \
 IMAGE:"$(date +'%y%m%d')" \
 nice -n19 jupyter lab --LabApp.token='' --no-browser --port=8888 --ip='*'
 
