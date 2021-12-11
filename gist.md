@@ -28,6 +28,7 @@ class LruCache<K, V> {
     return this;
   };
   delete = (k: K) => this.buf.delete(k);
+  clear = () => this.buf.clear();
   oldest = () => this.buf.keys().next().value;
 }
 
