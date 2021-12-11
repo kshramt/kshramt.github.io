@@ -1,42 +1,74 @@
-```javascript
-const cache = {};
-const cached = (f) => {
-  // const cache = {};
-  return async (x, t) => {
-    console.log("a", x);
-    if (!(x in cache)) {
-      cache[x] = (async () => {
-        console.log("d", x, cache);
-        try {
-          return f(x, t);
-        } catch (e) {
-          delete cache[x];
-          throw e;
-        }
-      })();
+```typescript
+class LruCache<K, V> {
+  capacity: number;
+  buf: Map<K, V>;
+  constructor(capacity: number) {
+    if (capacity < 1) {
+      throw Error("capacity < 1");
     }
-    return cache[x];
+    this.capacity = capacity;
+    this.buf = new Map<K, V>();
+  }
+  has = (k: K) => this.buf.has(k);
+  get = (k: K) => {
+    if (this.has(k)) {
+      const v = this.buf.get(k);
+      this.buf.delete(k);
+      this.buf.set(k, v);
+      return v;
+    }
+  };
+  set = (k: K, v: V) => {
+    if (this.buf.has(k)) {
+      this.buf.delete(k);
+    } else if (this.buf.size === this.capacity) {
+      this.buf.delete(this.oldest());
+    }
+    this.buf.set(k, v);
+    return this;
+  };
+  delete = (k: K) => this.buf.delete(k);
+  oldest = () => this.buf.keys().next().value;
+}
+
+const amemo1 = <K, V>(f: (k: K) => V, capacity: number) => {
+  const cache = new LruCache(capacity);
+  return async (k: K) => {
+    if (cache.has(k)) {
+      return cache.get(k);
+    }
+    const v = (async () => {
+      try {
+        // await is intentional.
+        return await f(k);
+      } catch (e) {
+        cache.delete(k);
+        throw e;
+      }
+    })();
+    cache.set(k, v);
+    return v;
   };
 };
 
 let G = 0;
 
-let slow = async (s, t) => {
+let slow = async (s) => {
   console.log("slow", s);
-  await new Promise((resolve) => setTimeout(resolve, t));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   G += 1;
   console.log("settimeout", G);
   return `${s}/${G}`;
 };
 
-const cslow = cached(slow);
+const cslow = amemo1(slow);
 
-cslow("p", 2000).then((v) => console.log("p1", v, cache));
-cslow("p", 2000).then((v) => console.log("p2", v, cache));
-cslow("q", 100).then((v) => console.log("q1", v, cache));
-cslow("p", 2000).then((v) => {
+cslow("p").then((v) => console.log("p1", v, cache));
+cslow("p").then((v) => console.log("p2", v, cache));
+cslow("q").then((v) => console.log("q1", v, cache));
+cslow("p").then((v) => {
   console.log("p3", v, cache);
-  cslow("p", 2000).then((v) => console.log("p4", v, cache));
+  cslow("p").then((v) => console.log("p4", v, cache));
 });
 ```
 
