@@ -12,7 +12,7 @@ class LruCache<K, V> {
   has = (k: K) => this.buf.has(k);
   get = (k: K) => {
     if (this.has(k)) {
-      const v = this.buf.get(k);
+      const v = this.buf.get(k) as V;
       this.buf.delete(k);
       this.buf.set(k, v);
       return v;
@@ -32,7 +32,7 @@ class LruCache<K, V> {
 }
 
 const amemo1 = <K, V>(f: (k: K) => V, capacity: number) => {
-  const cache = new LruCache<K, V>(capacity);
+  const cache = new LruCache<K, Promise<V>>(capacity);
   return async (k: K) => {
     if (cache.has(k)) {
       return cache.get(k);
