@@ -32,7 +32,7 @@ class LruCache<K, V> {
 }
 
 const amemo1 = <K, V>(f: (k: K) => V, capacity: number) => {
-  const cache = new LruCache(capacity);
+  const cache = new LruCache<K, V>(capacity);
   return async (k: K) => {
     if (cache.has(k)) {
       return cache.get(k);
