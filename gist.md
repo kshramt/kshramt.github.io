@@ -34,7 +34,7 @@ class LruCache<K, V> {
 
 const amemo1 = <K, V>(f: (k: K) => V, capacity: number) => {
   const cache = new LruCache<K, Promise<V>>(capacity);
-  return async (k: K) => {
+  const res = async (k: K) => {
     if (cache.has(k)) {
       return cache.get(k);
     }
@@ -50,6 +50,8 @@ const amemo1 = <K, V>(f: (k: K) => V, capacity: number) => {
     cache.set(k, v);
     return v;
   };
+  res.clear = cache.clear;
+  return res;
 };
 
 let G = 0;
