@@ -32,11 +32,11 @@ class LruCache<K, V> {
   oldest = () => this.buf.keys().next().value;
 }
 
-const amemo1 = <K, V>(f: (k: K) => V, capacity: number) => {
+const amemo1 = <K, V>(f: (k: K) => Promise<V>, capacity: number) => {
   const cache = new LruCache<K, Promise<V>>(capacity);
   const res = async (k: K) => {
     if (cache.has(k)) {
-      return cache.get(k);
+      return cache.get(k) as Promise<V>;
     }
     const v = (async () => {
       try {
