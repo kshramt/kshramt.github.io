@@ -1,26 +1,30 @@
 ```python
 import asyncio
+import collections
+from typing import Any, Generic, TypeVar
+
+_T1 = TypeVar("_T1")
 
 
-class LazyTask:
-    def __init__(self, coro):
+class LazyTask(Generic[_T1]):
+    def __init__(self, coro: collections.abc.Coroutine[Any, Any, _T1]) -> None:
         self._coro = coro
-        self._task = None
+        self._task: None | asyncio.Task[_T1] = None
 
-    def __await__(self):
+    def __await__(self) -> collections.abc.Generator[Any, None, _T1]:
         if self._task is None:
             self._task = asyncio.create_task(self._coro)
         return self._task.__await__()
 
 
-async def f():
+async def f() -> int:
     return 8
 
 
 t = LazyTask(f())
 
 
-async def g():
+async def g() -> None:
     print(await t)
     print(await t)
 
